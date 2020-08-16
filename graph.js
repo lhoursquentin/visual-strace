@@ -47,7 +47,7 @@ const regexSlice = (input, regex) => {
 }
 
 const pidSet = new Set()
-const speed = 1000000
+const speed = 200000
 const forkSyscalls = new Set(['clone', 'fork', 'vfork'])
 
 var totalTime = 0
