@@ -1,0 +1,34 @@
+<!doctype html>
+
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Visual strace</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+    #cy {
+      width: 300px;
+      height: 300px;
+      display: block;
+    }
+    .success {
+      background-color: green;
+    }
+    .error {
+      background-color: red;
+    }
+  </style>
+</head>
+<body>
+
+<div id='cy' style="width: 100vw; height: 100vh"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.15.2/cytoscape.min.js"></script>
+<script src="./strace-output.js"></script>
+<script src="./graph.js"></script>
+
+</body>
+</html>
