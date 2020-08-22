@@ -10,3 +10,15 @@ Example output:
 [https://lhoursquentin.github.io/visual-strace/](https://lhoursquentin.github.io/visual-strace/)
 showing a [system-summary](https://github.com/lhoursquentin/system-summary)
 run, slowed down 200'000 times.
+
+# How to use
+
+Use the provided `strace-cmd` shell script helper used to fetch the output of
+strace and embed it in a js file (`strace-output.js`)
+```sh
+$ ./strace-cmd <your executable> [args]...
+```
+
+Note that this overwrites the contents of `strace-output.js`.
+
+Then open `index.html` in your browser, and you're done!
