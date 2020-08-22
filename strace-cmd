@@ -4,6 +4,7 @@ strace -qrfe clone,execve,fork,vfork "$@" 2>&1 1>&3 |
   sed '
 1i \
 const straceOutput = `
+s/\\/&&/g
 $a \
 `
 ' > strace-output.js
