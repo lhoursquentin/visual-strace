@@ -1,9 +1,8 @@
 var cy = cytoscape({
 
-  container: document.getElementById('cy'), // container to render in
-
+  container: document.getElementById('cy'),
   elements: [ // list of graph elements to start with
-    { // node a
+    {
       data: { id: 'root' },
     },
   ],
@@ -86,7 +85,12 @@ straceOutput.split('\n').forEach(line => {
   [line, syscall] = regexSlice(line, /^ (\w+)/);
   let resumed = false;
   if (!syscall) { // either process exit or resumed syscall case
-    if ((pidInfo.exit.code = regexSlice(line, /^ \+\+\+ exited with (\d+) \+\+\+/)[1]) !== '') {
+    if ((
+      pidInfo.exit.code = (
+        regexSlice(line, /^ \+\+\+ exited with (\d+) \+\+\+/)[1] ||
+        regexSlice(line, /^ \+\+\+ killed by SIG([^ ]+) \+\+\+/)[1]
+      )
+    )) {
       pidInfo.exit.time = totalTime;
       return;
     }
@@ -191,12 +195,20 @@ straceInfo.forEach((
 
   if (exit.code !== undefined) {
     setTimeout(() => {
-      cy.getElementById(pid).animate({
+      const success = exit.code === '0';
+      const element = cy.getElementById(pid);
+      if (!success) {
+        element.style({ label: `${element.style().label} (${exit.code})` });
+      }
+      element.animate({
         style: {
-          backgroundColor:
-              exit.code === '0'
-                ? 'mediumseagreen'
-                : 'tomato',
+          backgroundColor: (
+            success
+              ? 'mediumseagreen'
+              : isNaN(parseInt(exit.code))
+                ? 'darkslateblue' // killed by a signal
+                : 'tomato' // non zero exit code
+          ),
         },
       }, {
         duration: Math.min(speed / 10, 300),
