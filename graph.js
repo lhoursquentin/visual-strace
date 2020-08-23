@@ -4,7 +4,7 @@ var cy = cytoscape({
 
   elements: [ // list of graph elements to start with
     { // node a
-      data: { id: 'root' }
+      data: { id: 'root' },
     },
   ],
 
@@ -13,41 +13,41 @@ var cy = cytoscape({
       selector: 'node',
       style: {
         'background-color': 'lavender',
-        'label': 'data(id)'
-      }
+        label: 'data(id)',
+      },
     },
 
     {
       selector: 'edge',
       style: {
-        'width': 3,
+        width: 3,
         'line-color': '#ccc',
         'target-arrow-color': '#ccc',
         'target-arrow-shape': 'triangle',
-        'curve-style': 'bezier'
-      }
-    }
+        'curve-style': 'bezier',
+      },
+    },
   ],
 });
 
-let options = {
+const options = {
   name: 'breadthfirst',
   animate: true,
   spacingFactor: 0.75,
   nodeDimensionsIncludeLabels: true,
-  roots: ['root']
+  roots: ['root'],
 };
 
 const regexSlice = (input, regex) => {
-  const result = input.match(regex)
+  const result = input.match(regex);
   return result ? [
     input.slice(result[0].length),
     result[1],
   ] : [
     input,
     '',
-  ]
-}
+  ];
+};
 
 const forkPidSet = new Set();
 const speed = 200000;
@@ -90,7 +90,7 @@ straceOutput.split('\n').forEach(line => {
       pidInfo.exit.time = totalTime;
       return;
     }
-    if (syscall = regexSlice(line, /^ <\.\.\. (\w+) resumed>/)[1]) {
+    if ((syscall = regexSlice(line, /^ <\.\.\. (\w+) resumed>/)[1])) {
       resumed = true;
     } else {
       return;
@@ -111,7 +111,7 @@ straceOutput.split('\n').forEach(line => {
       const info = pidInfo.pendingSyscalls.get(syscall);
       if (info === undefined) {
         console.error(
-          'Could not find unfinished syscall for resumed one', pid, syscall)
+          'Could not find unfinished syscall for resumed one', pid, syscall);
       }
       pidInfo.pendingSyscalls.delete(syscall);
       pidInfo.syscalls.push([syscall, info]);
@@ -140,7 +140,7 @@ straceOutput.split('\n').forEach(line => {
       forkPidSet.add(syscallInfo.returnValue);
     }
   }
-})
+});
 
 straceInfo.forEach((
   {
@@ -161,7 +161,7 @@ straceInfo.forEach((
         ended,
         path,
       },
-    ]
+    ],
   ) => {
     setTimeout(() => {
       if (forkSyscalls.has(syscall)) {
@@ -184,23 +184,23 @@ straceInfo.forEach((
         cy.layout(options).run();
       } else if (syscall === 'execve') {
         const basename = regexSlice(path, /.*\/(.*)/)[1];
-        cy.getElementById(pid).style({label: basename});
+        cy.getElementById(pid).style({ label: basename });
       }
     }, started * speed);
   });
 
   if (exit.code !== undefined) {
     setTimeout(() => {
-        cy.getElementById(pid).animate({
-          style: {
-            backgroundColor:
+      cy.getElementById(pid).animate({
+        style: {
+          backgroundColor:
               exit.code === '0'
-              ? 'mediumseagreen'
-              : 'tomato'
-          }
-        }, {
-          duration: Math.min(speed / 10, 300),
-        })
+                ? 'mediumseagreen'
+                : 'tomato',
+        },
+      }, {
+        duration: Math.min(speed / 10, 300),
+      });
     }, exit.time * speed);
   }
-})
+});
