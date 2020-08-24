@@ -1,34 +1,52 @@
 <!doctype html>
 
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Visual strace</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-    }
-    #cy {
-      width: 300px;
-      height: 300px;
-      display: block;
-    }
-    .success {
-      background-color: green;
-    }
-    .error {
-      background-color: red;
-    }
-  </style>
-</head>
-<body>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Visual strace</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div id="loader">
+      <header id="repo-link">
+        <a
+          href="https://github.com/lhoursquentin/visual-strace"
+          target="_blank"
+        >
+          Github repo
+        </a>
+      </header>
 
-<div id='cy' style="width: 100vw; height: 100vh"></div>
+      <label for="strace-output">
+        Run:
+        <pre><code>
+          strace -qrfe clone,execve,fork,vfork &lt;cmd&gt; [args]...
+        </pre></code>
+        and paste the ouput below:
+      </label>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.15.2/cytoscape.min.js"></script>
-<script src="./strace-output.js"></script>
-<script src="./graph.js"></script>
+      <div id="run-form">
+        <textarea
+          id="strace-output"
+          name="strace-output"
+          placeholder="strace output goes here"
+        ></textarea>
+        <button id="run">run</button>
+      </div>
+      Or click <button id="load-example">here</button> to load an
+      <a
+        href="https://github.com/lhoursquentin/system-summary"
+        target="_blank"
+      >
+        example
+      </a>
+    </div>
+    <div id="cy"></div>
 
-</body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.15.2/cytoscape.min.js"></script>
+    <script src="./example-strace-output.js"></script>
+    <script src="./graph.js"></script>
+    <script src="./loader.js"></script>
+
+  </body>
 </html>

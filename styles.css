@@ -1,0 +1,50 @@
+body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  width: 100vw;
+}
+
+header {
+  margin-bottom: 10px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+pre {
+  margin: 0;
+  white-space: nowrap;
+  line-height: 2;
+}
+
+#cy {
+  z-index: 0;
+  height: 100%;
+  width: 100%;
+}
+
+#loader {
+  z-index: 1;
+  position: absolute;
+  padding: 10px;
+  background-color: rgba(150, 150, 150, 0.5);
+  border-radius: 10px;
+  transition: opacity 0.2s;
+}
+
+#loader:not(:hover) {
+  opacity: 0.5;
+}
+
+#run-form {
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+#run-form > button {
+  margin-left: 5px;
+}

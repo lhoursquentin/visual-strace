@@ -1,4 +1,4 @@
-const straceOutput = `
+const exampleStraceOutput = `
      0.000000 execve("/home/quentin/.local/bin/system-summary", ["system-summary"], 0x7ffc1ce0a780 /* 94 vars */) = 0
      0.004037 clone(child_stack=NULL, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x7fab0597ea10) = 337008
 [pid 337008]      0.000602 clone(child_stack=NULL, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x7fab0597ea10) = 337009
