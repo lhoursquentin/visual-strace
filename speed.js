@@ -1,6 +1,7 @@
 // Speed represents a slow down factor
 
 const defaultAnimationDuration = 20; // seconds
+const minAnimationDuration = 3;
 const slider = document.getElementById('speed-slider');
 const valueBox = document.getElementById('speed-value-input');
 
@@ -21,8 +22,8 @@ const setupSpeedInputs = (totalTime) => {
   valueBox.addEventListener('input', handleSpeedChange);
   const defaultSpeed = 1 / (totalTime / defaultAnimationDuration);
   speed = defaultSpeed;
-  slider.min = 0; // paused basically
-  slider.max = defaultSpeed * defaultAnimationDuration; // 1s as the minimum duration
+  slider.min = 1 / (totalTime / minAnimationDuration);
+  slider.max = defaultSpeed * 10;
   updateSpeedInputs();
 
   document.getElementById('speed-controller').style.visibility = 'visible';

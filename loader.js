@@ -1,11 +1,18 @@
+var speedSetupNeeded = true;
+const straceOutputElement = document.getElementById('strace-output');
+
 const loadStrace = () => {
-  showGraph(document.getElementById('strace-output').value);
+  showGraph(straceOutputElement.value);
 };
 
 const loadExample = () => {
-  document.getElementById('strace-output').value = exampleStraceOutput;
+  straceOutputElement.value = exampleStraceOutput;
+  speedSetupNeeded = true;
   showGraph(exampleStraceOutput);
 };
 
 document.getElementById('run').onclick = loadStrace;
 document.getElementById('load-example').onclick = loadExample;
+// If we change the strace output, reset the speed default values on the next
+// run
+straceOutputElement.addEventListener('input', (() => speedSetupNeeded = true));

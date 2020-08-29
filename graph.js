@@ -218,7 +218,10 @@ const showGraph = (straceOutput) => {
     }
   });
 
-  setupSpeedInputs(totalTime);
+  if (speedSetupNeeded) {
+    setupSpeedInputs(totalTime);
+    speedSetupNeeded = false;
+  }
 
   const run = ([[fn, timeout], ...remainingTasks]) => {
     setTimeout(() => {
