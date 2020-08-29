@@ -10,6 +10,10 @@ var speed;
 const updateSpeedInputs = () => {
   slider.value = speed;
   valueBox.value = speed;
+  if (remainingTasks?.length > 0) {
+    clearTimeout(currentTimeout);
+    run(remainingTasks);
+  }
 };
 
 const handleSpeedChange = (event) => {

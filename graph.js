@@ -1,3 +1,17 @@
+var currentTimeout;
+var remainingTasks = [];
+
+const run = (tasks) => {
+  const [[fn, timeout], ...nextTasks] = tasks;
+  remainingTasks = tasks;
+  currentTimeout = setTimeout(() => {
+    fn();
+    if (nextTasks.length > 0) {
+      run(nextTasks);
+    }
+  }, speed * timeout * 1000); // timeout variable unit is seconds
+};
+
 const showGraph = (straceOutput) => {
   var cy = cytoscape({
     container: document.getElementById('cy'),
@@ -222,15 +236,6 @@ const showGraph = (straceOutput) => {
     setupSpeedInputs(totalTime);
     speedSetupNeeded = false;
   }
-
-  const run = ([[fn, timeout], ...remainingTasks]) => {
-    setTimeout(() => {
-      fn();
-      if (remainingTasks.length > 0) {
-        run(remainingTasks);
-      }
-    }, speed * timeout * 1000); // timeout variable unit is seconds
-  };
 
   run(tasks);
 };
