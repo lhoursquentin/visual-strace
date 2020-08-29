@@ -9,11 +9,6 @@ header {
   margin-bottom: 10px;
 }
 
-label {
-  display: block;
-  margin-bottom: 5px;
-}
-
 pre {
   margin: 0;
   white-space: nowrap;
@@ -24,6 +19,11 @@ pre {
   z-index: 0;
   height: 100%;
   width: 100%;
+}
+
+#loader label {
+  display: block;
+  margin-bottom: 5px;
 }
 
 #loader {
@@ -47,4 +47,21 @@ pre {
 
 #run-form > button {
   margin-left: 5px;
+}
+
+#speed-controller {
+  z-index: 1;
+  position: absolute;
+  right: 0;
+  display: flex;
+  padding: 20px;
+  visibility: hidden;
+}
+
+#speed-controller > * {
+  margin-right: 5px;
+}
+
+#speed-value-input {
+  width: 10ch;
 }

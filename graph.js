@@ -68,7 +68,7 @@ const showGraph = (straceOutput) => {
         ),
       },
     }, {
-      duration: Math.min(speed / 10, 300),
+      duration: 100,
     });
   };
 
@@ -101,7 +101,6 @@ const showGraph = (straceOutput) => {
   };
 
   const forkPidSet = new Set();
-  const speed = 200000;
   const forkSyscalls = new Set(['clone', 'fork', 'vfork']);
   const straceInfo = new Map();
   const tasks = [];
@@ -219,13 +218,15 @@ const showGraph = (straceOutput) => {
     }
   });
 
+  setupSpeedInputs(totalTime);
+
   const run = ([[fn, timeout], ...remainingTasks]) => {
     setTimeout(() => {
       fn();
       if (remainingTasks.length > 0) {
         run(remainingTasks);
       }
-    }, timeout * speed);
+    }, speed * timeout * 1000); // timeout variable unit is seconds
   };
 
   run(tasks);

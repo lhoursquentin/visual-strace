@@ -6,10 +6,10 @@ strace run.
 
 Graph building and representation is done with [cytoscape.js](https://js.cytoscape.org/).
 
-Example output:
-[https://lhoursquentin.github.io/visual-strace/](https://lhoursquentin.github.io/visual-strace/)
-showing a [system-summary](https://github.com/lhoursquentin/system-summary)
-run, slowed down 200'000 times.
+To try it out:
+[https://lhoursquentin.github.io/visual-strace/](https://lhoursquentin.github.io/visual-strace/).
+The example that can be loaded is showing a [system-summary](https://github.com/lhoursquentin/system-summary)
+run.
 
 # How to change the default example
 
