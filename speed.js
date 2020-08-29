@@ -1,7 +1,7 @@
 // Speed represents a slow down factor
 
 const defaultAnimationDuration = 20; // seconds
-const minAnimationDuration = 3;
+const minAnimationDuration = 1;
 const slider = document.getElementById('speed-slider');
 const valueBox = document.getElementById('speed-value-input');
 
@@ -21,10 +21,13 @@ const handleSpeedChange = (event) => {
   updateSpeedInputs();
 };
 
-const setupSpeedInputs = (totalTime) => {
+const setupSpeedInputs = (totalTime, totalNodes) => {
   slider.addEventListener('input', handleSpeedChange);
   valueBox.addEventListener('input', handleSpeedChange);
-  const defaultSpeed = 1 / (totalTime / defaultAnimationDuration);
+  // one node === 1s up to defaultAnimationDuration limit
+  const defaultSpeed = (
+    1 / (totalTime / Math.min(totalNodes, defaultAnimationDuration))
+  );
   speed = defaultSpeed;
   slider.min = 1 / (totalTime / minAnimationDuration);
   slider.max = defaultSpeed * 10;

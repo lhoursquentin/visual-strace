@@ -233,7 +233,7 @@ const showGraph = (straceOutput) => {
   });
 
   if (speedSetupNeeded) {
-    setupSpeedInputs(totalTime);
+    setupSpeedInputs(totalTime, straceInfo.size);
     speedSetupNeeded = false;
   }
 
