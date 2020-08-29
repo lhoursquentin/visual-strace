@@ -1,4 +1,4 @@
-const run = (straceOutput) => {
+const showGraph = (straceOutput) => {
   var cy = cytoscape({
     container: document.getElementById('cy'),
     elements: [ // list of graph elements to start with
@@ -48,11 +48,65 @@ const run = (straceOutput) => {
     ];
   };
 
+  const exitHandler = (pid, { exit }) => {
+    if (!forkPidSet.has(pid)) {
+      pid = 'root';
+    }
+    const success = exit.code === '0';
+    const element = cy.getElementById(pid);
+    if (!success) {
+      element.style({ label: `${element.style().label} (${exit.code})` });
+    }
+    element.animate({
+      style: {
+        backgroundColor: (
+          success
+            ? 'mediumaquamarine'
+            : isNaN(parseInt(exit.code))
+              ? 'darkslateblue' // killed by a signal
+              : 'tomato' // non zero exit code
+        ),
+      },
+    }, {
+      duration: Math.min(speed / 10, 300),
+    });
+  };
+
+  const syscallHandler = (pid, syscall, { path, returnValue }) => {
+    if (!forkPidSet.has(pid)) {
+      pid = 'root';
+    }
+    if (forkSyscalls.has(syscall)) {
+      const father = cy.getElementById(pid);
+      cy.add([
+        {
+          group: 'nodes',
+          data: { id: returnValue },
+          renderedPosition: { ...father.renderedPosition },
+        },
+        {
+          group: 'edges',
+          data: {
+            id: `${pid}${returnValue}`,
+            source: pid,
+            target: returnValue,
+          },
+        },
+      ]);
+      cy.layout(options).run();
+    } else if (syscall === 'execve') {
+      const basename = regexSlice(path, /.*\/(.*)/)[1];
+      cy.getElementById(pid).style({ label: basename });
+    }
+  };
+
   const forkPidSet = new Set();
   const speed = 200000;
   const forkSyscalls = new Set(['clone', 'fork', 'vfork']);
   const straceInfo = new Map();
+  const tasks = [];
   let totalTime = 0;
+  let additionalTimeDiff = 0;
 
   straceOutput.split('\n').forEach(line => {
     let pid, timeDiff, syscall;
@@ -78,6 +132,7 @@ const run = (straceOutput) => {
     line = line.trim();
     [line, timeDiff] = regexSlice(line, /^(\d+\.\d+)/);
     if (timeDiff === '') {
+      console.warn(`Failed to parse time diff, ignoring: "${line}"`);
       return;
     }
 
@@ -92,11 +147,20 @@ const run = (straceOutput) => {
         )
       )) {
         pidInfo.exit.time = totalTime;
+        tasks.push([
+          () => exitHandler(pid, pidInfo),
+          timeDiff + additionalTimeDiff,
+        ]);
+        additionalTimeDiff = 0;
         return;
-      }
-      if ((syscall = regexSlice(line, /^ <\.\.\. (\w+) resumed>/)[1])) {
+      } else if ((syscall = regexSlice(line, /^ <\.\.\. (\w+) resumed>/)[1])) {
         resumed = true;
       } else {
+        console.warn(
+          'Time diff found, but no syscall or exit message parsed, ignoring:',
+          `"${line}"`,
+        );
+        additionalTimeDiff = timeDiff + additionalTimeDiff;
         return;
       }
     }
@@ -104,11 +168,12 @@ const run = (straceOutput) => {
     const unfinished = Boolean(line.match(/.*<unfinished \.\.\.>$/));
 
     const syscallInfo = (() => {
+      const initialInfo = {};
       if (unfinished) {
         if (pidInfo.pendingSyscalls.has(syscall)) {
           console.error('pending syscall conflict', pid, syscall);
         } else {
-          pidInfo.pendingSyscalls.set(syscall, {});
+          pidInfo.pendingSyscalls.set(syscall, initialInfo);
         }
         return pidInfo.pendingSyscalls.get(syscall);
       } else if (resumed) {
@@ -121,13 +186,28 @@ const run = (straceOutput) => {
         pidInfo.syscalls.push([syscall, info]);
         return info;
       }
-      const info = {};
-      pidInfo.syscalls.push([syscall, info]);
-      return info;
+      pidInfo.syscalls.push([syscall, initialInfo]);
+      return initialInfo;
     })();
 
     if (syscall === 'execve' && !resumed) {
       syscallInfo.path = regexSlice(line, /\("([^"]+)/)[1];
+    }
+
+    if (!unfinished) {
+      syscallInfo.returnValue = regexSlice(line, /.* = (-?\d+)/)[1];
+      if (forkSyscalls.has(syscall)) {
+        forkPidSet.add(syscallInfo.returnValue);
+      }
+      tasks.push([
+        () => syscallHandler(pid, syscall, syscallInfo),
+        timeDiff + additionalTimeDiff,
+      ]);
+      additionalTimeDiff = 0;
+    } else {
+      // no effective action for now, we need to take the current time interval
+      // into account for the next one.
+      additionalTimeDiff = timeDiff + additionalTimeDiff;
     }
 
     syscallInfo.started = totalTime;
@@ -137,83 +217,16 @@ const run = (straceOutput) => {
     } else {
       syscallInfo.ended = syscallInfo.started; // not accurate
     }
+  });
 
-    if (!unfinished) {
-      syscallInfo.returnValue = regexSlice(line, /.* = (-?\d+)/)[1];
-      if (forkSyscalls.has(syscall)) {
-        forkPidSet.add(syscallInfo.returnValue);
+  const run = ([[fn, timeout], ...remainingTasks]) => {
+    setTimeout(() => {
+      fn();
+      if (remainingTasks.length > 0) {
+        run(remainingTasks);
       }
-    }
-  });
+    }, timeout * speed);
+  };
 
-  straceInfo.forEach((
-    {
-      syscalls,
-      exit,
-    },
-    pid,
-  ) => {
-    if (!forkPidSet.has(pid)) {
-      pid = 'root';
-    }
-    syscalls.forEach((
-      [
-        syscall,
-        {
-          returnValue,
-          started,
-          ended,
-          path,
-        },
-      ],
-    ) => {
-      setTimeout(() => {
-        if (forkSyscalls.has(syscall)) {
-          const father = cy.getElementById(pid);
-          cy.add([
-            {
-              group: 'nodes',
-              data: { id: returnValue },
-              renderedPosition: { ...father.renderedPosition },
-            },
-            {
-              group: 'edges',
-              data: {
-                id: `${pid}${returnValue}`,
-                source: pid,
-                target: returnValue,
-              },
-            },
-          ]);
-          cy.layout(options).run();
-        } else if (syscall === 'execve') {
-          const basename = regexSlice(path, /.*\/(.*)/)[1];
-          cy.getElementById(pid).style({ label: basename });
-        }
-      }, started * speed);
-    });
-
-    if (exit.code !== undefined) {
-      setTimeout(() => {
-        const success = exit.code === '0';
-        const element = cy.getElementById(pid);
-        if (!success) {
-          element.style({ label: `${element.style().label} (${exit.code})` });
-        }
-        element.animate({
-          style: {
-            backgroundColor: (
-              success
-                ? 'mediumaquamarine'
-                : isNaN(parseInt(exit.code))
-                  ? 'darkslateblue' // killed by a signal
-                  : 'tomato' // non zero exit code
-            ),
-          },
-        }, {
-          duration: Math.min(speed / 10, 300),
-        });
-      }, exit.time * speed);
-    }
-  });
+  run(tasks);
 };

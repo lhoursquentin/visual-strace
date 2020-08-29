@@ -11,7 +11,7 @@ Example output:
 showing a [system-summary](https://github.com/lhoursquentin/system-summary)
 run, slowed down 200'000 times.
 
-# How to use
+# How to change the default example
 
 Use the provided `strace-cmd` shell script helper used to fetch the output of
 strace and embed it in a js file (`strace-output.js`)
@@ -19,6 +19,6 @@ strace and embed it in a js file (`strace-output.js`)
 $ ./strace-cmd <your executable> [args]...
 ```
 
-Note that this overwrites the contents of `strace-output.js`.
+Note that this overwrites the contents of `example-strace-output.js`.
 
-Then open `index.html` in your browser, and you're done!
+Then open `index.html` in your browser, load the example, and you're done!

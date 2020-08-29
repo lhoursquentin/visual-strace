@@ -5,11 +5,9 @@ output_file=example-strace-output.js
 exec 3>&1
 strace -qrfe clone,execve,fork,vfork "$@" 2>&1 1>&3 |
   sed '
-1i \
-const exampleStraceOutput = `
 s/[`\]/\\&/g
-$a \
-`
+1s/^/const exampleStraceOutput = `/
+$s/$/`;/
 ' > "$output_file"
 
 printf 'Generated strace output in %s\n' "$output_file"
