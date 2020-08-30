@@ -122,7 +122,7 @@ const showGraph = (straceOutput) => {
   let additionalTimeDiff = 0;
 
   straceOutput.split('\n').forEach(line => {
-    let pid, timeDiff, syscall;
+    let pid, syscall, timeDiffStr;
     [line, pid] = regexSlice(line, /^\[pid (\d+)\]/);
     if (!pid) {
       pid = 'root';
@@ -143,13 +143,14 @@ const showGraph = (straceOutput) => {
     })();
 
     line = line.trim();
-    [line, timeDiff] = regexSlice(line, /^(\d+\.\d+)/);
-    if (timeDiff === '') {
+    [line, timeDiffStr] = regexSlice(line, /^(\d+\.\d+)/);
+    if (timeDiffStr === '') {
       console.warn(`Failed to parse time diff, ignoring: "${line}"`);
       return;
     }
 
-    totalTime += parseFloat(timeDiff);
+    const timeDiff = parseFloat(timeDiffStr);
+    totalTime += timeDiff;
     [line, syscall] = regexSlice(line, /^ (\w+)/);
     let resumed = false;
     if (!syscall) { // either process exit or resumed syscall case
