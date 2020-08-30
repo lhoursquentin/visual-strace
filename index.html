@@ -17,19 +17,25 @@
         </a>
       </header>
 
-      <label for="strace-output">
-        Run:
-        <pre><code>
-          strace -qrfe clone,execve,fork,vfork &lt;cmd&gt; [args]...
-        </pre></code>
-        and paste the ouput below:
-      </label>
+      <p>
+        Run:<br>
+        <code>
+          <input
+            id="strace-cmd"
+            type="text"
+            value="strace -qrfe clone,execve,fork,vfork "
+            readonly
+          >
+          &lt;cmd&gt; [args]...
+        </code>
+        <br>and paste the ouput below:
+      </p>
 
       <div id="run-form">
         <textarea
           id="strace-output"
-          name="strace-output"
           placeholder="strace output goes here"
+          spellcheck="false"
         ></textarea>
         <button id="run" disabled>run</button>
       </div>

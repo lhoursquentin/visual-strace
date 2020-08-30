@@ -9,21 +9,19 @@ header {
   margin-bottom: 10px;
 }
 
-pre {
-  margin: 0;
-  white-space: nowrap;
+code {
   line-height: 2;
+}
+
+code > input {
+  background-color: inherit;
+  font-family: inherit;
 }
 
 #cy {
   z-index: 0;
   height: 100%;
   width: 100%;
-}
-
-#loader label {
-  display: block;
-  margin-bottom: 5px;
 }
 
 #loader {

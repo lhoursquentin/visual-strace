@@ -17,10 +17,11 @@ runButton.onclick = loadStrace;
 document.getElementById('load-example').onclick = loadExample;
 // If we change the strace output, reset the speed default values on the next
 // run
-straceOutputElement.addEventListener(
-  'input',
-  (event) => {
-    speedSetupNeeded = true;
-    runButton.disabled = event.target.value.trim() === '';
-  },
-);
+straceOutputElement.addEventListener('input', (event) => {
+  speedSetupNeeded = true;
+  runButton.disabled = event.target.value.trim() === '';
+});
+
+const straceCmdInput = document.getElementById('strace-cmd');
+// Using input.size is clearer but is somehow slightly wider than the content
+straceCmdInput.style.width = `${straceCmdInput.value.length}ch`;
