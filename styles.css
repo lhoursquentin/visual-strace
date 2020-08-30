@@ -5,8 +5,14 @@ body {
   width: 100vw;
 }
 
-header {
-  margin-bottom: 10px;
+#loader header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+#toggle-loader {
+  margin-left: 10px;
 }
 
 code {
@@ -33,6 +39,10 @@ code > input {
   transition: opacity 0.2s;
 }
 
+#loader-content {
+  margin-top: 10px;
+}
+
 #loader:not(:hover) {
   opacity: 0.5;
 }
@@ -51,6 +61,7 @@ code > input {
   z-index: 1;
   position: absolute;
   right: 0;
+  align-items: center;
   display: flex;
   padding: 20px;
   visibility: hidden;
