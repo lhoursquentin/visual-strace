@@ -123,7 +123,12 @@ const showGraph = (straceOutput) => {
 
   straceOutput.split('\n').forEach(line => {
     let pid, syscall, timeDiffStr;
-    [line, pid] = regexSlice(line, /^\[pid (\d+)\]/);
+    // TODO noticed the output with -o <file> is different, and also easier to
+    // parse since even the root process has the pid displayed from the start.
+    // Though the fact that this is only <pid> instead of [pid <pid>] makes
+    // supporting both syntaxes annoying.
+    // (to try it out on directly on stdout a file use `-o '|cat'`)
+    [line, pid] = regexSlice(line, /^\[pid +(\d+)\]/);
     if (!pid) {
       pid = 'root';
     }
