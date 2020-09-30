@@ -25,7 +25,7 @@
             <input
               id="strace-cmd"
               type="text"
-              value="strace -qrfe clone,execve,fork,vfork "
+              value="strace -o \|cat -yqrfe clone,execve,fork,vfork,read,write "
               readonly
             >
             &lt;cmd&gt; [args]...

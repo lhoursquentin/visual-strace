@@ -15,12 +15,6 @@ const run = (tasks) => {
 const showGraph = (straceOutput) => {
   var cy = cytoscape({
     container: document.getElementById('cy'),
-    elements: [ // list of graph elements to start with
-      {
-        data: { id: 'root' },
-      },
-    ],
-
     style: [ // the stylesheet for the graph
       {
         selector: 'node',
@@ -48,7 +42,7 @@ const showGraph = (straceOutput) => {
     animate: true,
     spacingFactor: 0.75,
     nodeDimensionsIncludeLabels: true,
-    roots: ['root'],
+    roots: [],
   };
 
   const regexSlice = (input, regex) => {
@@ -63,9 +57,6 @@ const showGraph = (straceOutput) => {
   };
 
   const exitHandler = (pid, { exit }) => {
-    if (!forkPidSet.has(pid)) {
-      pid = 'root';
-    }
     const success = exit.code === '0';
     const element = cy.getElementById(pid);
     if (!success) {
@@ -86,10 +77,7 @@ const showGraph = (straceOutput) => {
     });
   };
 
-  const syscallHandler = (pid, syscall, { path, returnValue }) => {
-    if (!forkPidSet.has(pid)) {
-      pid = 'root';
-    }
+  const syscallHandler = (pid, syscall, { args, returnValue, io }) => {
     if (forkSyscalls.has(syscall)) {
       const father = cy.getElementById(pid);
       cy.add([
@@ -109,12 +97,52 @@ const showGraph = (straceOutput) => {
       ]);
       cy.layout(options).run();
     } else if (syscall === 'execve') {
-      const basename = regexSlice(path, /.*\/(.*)/)[1];
+      if (options.roots.length === 0) {
+        options.roots.push(pid)
+        cy.add([
+          {
+            group: 'nodes',
+            data: { id: pid },
+          },
+        ]);
+        cy.layout(options).run();
+      }
+      const basename = regexSlice(args[0], /".*\/(.*)"/)[1];
       cy.getElementById(pid).style({ label: basename });
+    } else if (syscall === 'read') {
+      if (!io) {
+        return;
+      }
+      const { source, content } = io;
+      const originalPid = fdToPid.write[source];
+      if (originalPid === undefined) {
+        return;
+      }
+
+      cy.add([{
+        group: 'edges',
+        data: {
+          id: source,
+          source: originalPid,
+          target: pid,
+        },
+        style: { // FIXME setting style at creation is deprecated
+          'target-arrow-color': 'coral',
+          'line-style': 'dashed',
+          'line-color': 'coral',
+          width: 2,
+        },
+      }]);
+    } else if (syscall === 'write') {
+      // TODO
     }
   };
 
-  const forkPidSet = new Set();
+  const fdToPid = {
+    write: {},
+    read: {},
+  };
+  const pidSet = new Set();
   const forkSyscalls = new Set(['clone', 'fork', 'vfork']);
   const straceInfo = new Map();
   const tasks = [];
@@ -122,16 +150,9 @@ const showGraph = (straceOutput) => {
   let additionalTimeDiff = 0;
 
   straceOutput.split('\n').forEach(line => {
+    const initialLine = line;
     let pid, syscall, timeDiffStr;
-    // TODO noticed the output with -o <file> is different, and also easier to
-    // parse since even the root process has the pid displayed from the start.
-    // Though the fact that this is only <pid> instead of [pid <pid>] makes
-    // supporting both syntaxes annoying.
-    // (to try it out on directly on stdout a file use `-o '|cat'`)
-    [line, pid] = regexSlice(line, /^\[pid +(\d+)\]/);
-    if (!pid) {
-      pid = 'root';
-    }
+    [line, pid] = regexSlice(line, /^(\d+)/);
 
     const pidInfo = (() => {
       if (!straceInfo.has(pid)) {
@@ -156,7 +177,7 @@ const showGraph = (straceOutput) => {
 
     const timeDiff = parseFloat(timeDiffStr);
     totalTime += timeDiff;
-    [line, syscall] = regexSlice(line, /^ (\w+)/);
+    [line, syscall] = regexSlice(line, /^ (\w+)\(/);
     let resumed = false;
     if (!syscall) { // either process exit or resumed syscall case
       if ((
@@ -172,7 +193,7 @@ const showGraph = (straceOutput) => {
         ]);
         additionalTimeDiff = 0;
         return;
-      } else if ((syscall = regexSlice(line, /^ <\.\.\. (\w+) resumed>/)[1])) {
+      } else if (([line, syscall] = regexSlice(line, /^ <\.\.\. (\w+) resumed> */)) && syscall) {
         resumed = true;
       } else {
         console.warn(
@@ -209,14 +230,33 @@ const showGraph = (straceOutput) => {
       return initialInfo;
     })();
 
-    if (syscall === 'execve' && !resumed) {
-      syscallInfo.path = regexSlice(line, /\("([^"]+)/)[1];
+    if (syscall) {
+      // eat everything up to parenthesis or < for unfinished calls
+      const argsString = regexSlice(line, /(.*)[<)]/)[1];
+      if (argsString) {
+        // FIXME splitting on ', ' is unsafe considering it can be contained in
+        // strings and arrays
+        syscallInfo.args = (syscallInfo.args || []).concat(argsString.split(', '));
+      }
     }
 
     if (!unfinished) {
       syscallInfo.returnValue = regexSlice(line, /.* = (-?\d+)/)[1];
       if (forkSyscalls.has(syscall)) {
-        forkPidSet.add(syscallInfo.returnValue);
+        pidSet.add(syscallInfo.returnValue);
+      } else if (syscall === 'read' || syscall === 'write') {
+        const pipeTarget = regexSlice(syscallInfo.args[0], /\d+<(pipe:\[\d+\])/)[1];
+        if (pipeTarget) {
+          syscallInfo.io = {
+            source: pipeTarget,
+            content: regexSlice(syscallInfo.args[1], /"(.*)"/)[1],
+          };
+          if (fdToPid[syscall][pipeTarget] === undefined) {
+            fdToPid[syscall][pipeTarget] = pid;
+          } else {
+            console.error('Multi-process pipe target detected, unsupported for now')
+          }
+        }
       }
       tasks.push([
         () => syscallHandler(pid, syscall, syscallInfo),
