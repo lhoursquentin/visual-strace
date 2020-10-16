@@ -37,6 +37,11 @@ const showGraph = (straceOutput) => {
     ],
   });
 
+  const fdToPid = {
+    write: {},
+    read: {},
+  };
+
   const options = {
     name: 'breadthfirst',
     animate: true,
@@ -114,34 +119,31 @@ const showGraph = (straceOutput) => {
         return;
       }
       const { source, content } = io;
-      const originalPid = fdToPid.write[source];
-      if (originalPid === undefined) {
-        return;
-      }
-
-      cy.add([{
-        group: 'edges',
-        data: {
-          id: source,
-          source: originalPid,
-          target: pid,
-        },
-        style: { // FIXME setting style at creation is deprecated
+      // FIXME not accurate, this always creates a write/read edge for all the
+      // members of fdToPid, will need to revisit this
+      fdToPid.write[source]?.forEach(originalPid => {
+        const id = `pipe:${originalPid},${pid}`;
+        const style = {
           'target-arrow-color': 'coral',
           'line-style': 'dashed',
           'line-color': 'coral',
           width: 2,
-        },
-      }]);
+        };
+        cy.add([{
+          group: 'edges',
+          data: {
+            id,
+            source: originalPid,
+            target: pid,
+          },
+        }]);
+        cy.getElementById(id).style(style);
+      });
     } else if (syscall === 'write') {
       // TODO
     }
   };
 
-  const fdToPid = {
-    write: {},
-    read: {},
-  };
   const pidSet = new Set();
   const forkSyscalls = new Set(['clone', 'fork', 'vfork']);
   const straceInfo = new Map();
@@ -244,6 +246,10 @@ const showGraph = (straceOutput) => {
       syscallInfo.returnValue = regexSlice(line, /.* = (-?\d+)/)[1];
       if (forkSyscalls.has(syscall)) {
         pidSet.add(syscallInfo.returnValue);
+        tasks.push([
+          () => syscallHandler(pid, syscall, syscallInfo),
+          timeDiff + additionalTimeDiff,
+        ]);
       } else if (syscall === 'read' || syscall === 'write') {
         const pipeTarget = regexSlice(syscallInfo.args[0], /\d+<(pipe:\[\d+\])/)[1];
         if (pipeTarget) {
@@ -251,18 +257,25 @@ const showGraph = (straceOutput) => {
             source: pipeTarget,
             content: regexSlice(syscallInfo.args[1], /"(.*)"/)[1],
           };
-          if (fdToPid[syscall][pipeTarget] === undefined) {
-            fdToPid[syscall][pipeTarget] = pid;
-          } else {
-            console.error('Multi-process pipe target detected, unsupported for now')
-          }
+          tasks.push([
+            () => {
+              if (fdToPid[syscall][pipeTarget] === undefined) {
+                fdToPid[syscall][pipeTarget] = [ pid ];
+              } else {
+                fdToPid[syscall][pipeTarget].push(pid);
+              }
+              syscallHandler(pid, syscall, syscallInfo)
+            },
+            timeDiff + additionalTimeDiff,
+          ]);
         }
+        additionalTimeDiff = 0;
+      } else {
+        tasks.push([
+          () => syscallHandler(pid, syscall, syscallInfo),
+          timeDiff + additionalTimeDiff,
+        ]);
       }
-      tasks.push([
-        () => syscallHandler(pid, syscall, syscallInfo),
-        timeDiff + additionalTimeDiff,
-      ]);
-      additionalTimeDiff = 0;
     } else {
       // no effective action for now, we need to take the current time interval
       // into account for the next one.
