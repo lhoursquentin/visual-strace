@@ -1,15 +1,20 @@
 var currentTimeout;
 var remainingTasks = [];
+let totalTasksTime = 0;
 
 const run = (tasks) => {
   const [[fn, timeout], ...nextTasks] = tasks;
   remainingTasks = tasks;
+  const taskTime = speed * timeout * 1000;
+  totalTasksTime += taskTime;
   currentTimeout = setTimeout(() => {
     fn();
     if (nextTasks.length > 0) {
       run(nextTasks);
+    } else {
+      console.log(`All tasks done in a total of: ${totalTasksTime}ms`)
     }
-  }, speed * timeout * 1000); // timeout variable unit is seconds
+  }, taskTime); // timeout variable unit is seconds
 };
 
 const showGraph = (straceOutput) => {
@@ -244,12 +249,15 @@ const showGraph = (straceOutput) => {
 
     if (!unfinished) {
       syscallInfo.returnValue = regexSlice(line, /.* = (-?\d+)/)[1];
+      // TODO reafactor this block, additionalTimeDiff modification in multiple
+      // places is error prone
       if (forkSyscalls.has(syscall)) {
         pidSet.add(syscallInfo.returnValue);
         tasks.push([
           () => syscallHandler(pid, syscall, syscallInfo),
           timeDiff + additionalTimeDiff,
         ]);
+        additionalTimeDiff = 0;
       } else if (syscall === 'read' || syscall === 'write') {
         const pipeTarget = regexSlice(syscallInfo.args[0], /\d+<(pipe:\[\d+\])/)[1];
         if (pipeTarget) {
@@ -268,18 +276,21 @@ const showGraph = (straceOutput) => {
             },
             timeDiff + additionalTimeDiff,
           ]);
+          additionalTimeDiff = 0;
+        } else {
+          additionalTimeDiff += timeDiff;
         }
-        additionalTimeDiff = 0;
       } else {
         tasks.push([
           () => syscallHandler(pid, syscall, syscallInfo),
           timeDiff + additionalTimeDiff,
         ]);
+        additionalTimeDiff = 0;
       }
     } else {
       // no effective action for now, we need to take the current time interval
       // into account for the next one.
-      additionalTimeDiff = timeDiff + additionalTimeDiff;
+      additionalTimeDiff += timeDiff;
     }
 
     syscallInfo.started = totalTime;
