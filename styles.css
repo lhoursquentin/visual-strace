@@ -74,3 +74,9 @@ code > input {
 #speed-value-input {
   width: 10ch;
 }
+
+#cytoscape-link {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+}
