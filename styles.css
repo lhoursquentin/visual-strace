@@ -43,6 +43,11 @@ code > input {
   margin-top: 10px;
 }
 
+#loader-content ul {
+  padding: 0;
+  list-style-position: inside;
+}
+
 #loader:not(:hover) {
   opacity: 0.5;
 }

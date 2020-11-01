@@ -30,18 +30,12 @@
             >
             &lt;cmd&gt; [args]...
           </code>
-          <br>and paste the contents of the newly created <code>strace.out</code> file below:
         </p>
-
-        <div id="run-form">
-          <textarea
-            id="strace-output"
-            placeholder="strace output goes here"
-            spellcheck="false"
-          ></textarea>
-          <button id="run" disabled>run</button>
-        </div>
         <ul>
+          <li>
+            Paste the contents of the newly created <code>strace.out</code>
+            file in the text area below
+          </li>
           <li>
             Or load a strace file (using <code>strace -o</code>):
             <input id="strace-file-input" type="file">
@@ -56,6 +50,14 @@
             </a>
           </li>
         </ul>
+        <div id="run-form">
+          <textarea
+            id="strace-output"
+            placeholder="strace output goes here"
+            spellcheck="false"
+          ></textarea>
+          <button id="run" disabled>run</button>
+        </div>
       </div>
     </section>
 
