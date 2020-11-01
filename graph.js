@@ -12,7 +12,7 @@ const run = (tasks) => {
     if (nextTasks.length > 0) {
       run(nextTasks);
     } else {
-      console.log(`All tasks done in a total of: ${totalTasksTime}ms`)
+      console.log(`All tasks done in a total of: ${totalTasksTime}ms`);
       pauseButton.style.display = 'none';
     }
   }, taskTime); // timeout variable unit is seconds
@@ -110,7 +110,7 @@ const showGraph = (straceOutput) => {
       cy.layout(options).run();
     } else if (syscall === 'execve') {
       if (options.roots.length === 0) {
-        options.roots.push(pid)
+        options.roots.push(pid);
         cy.add([
           {
             group: 'nodes',
@@ -270,11 +270,11 @@ const showGraph = (straceOutput) => {
           tasks.push([
             () => {
               if (fdToPid[syscall][pipeTarget] === undefined) {
-                fdToPid[syscall][pipeTarget] = [ pid ];
+                fdToPid[syscall][pipeTarget] = [pid];
               } else {
                 fdToPid[syscall][pipeTarget].push(pid);
               }
-              syscallHandler(pid, syscall, syscallInfo)
+              syscallHandler(pid, syscall, syscallInfo);
             },
             timeDiff + additionalTimeDiff,
           ]);
