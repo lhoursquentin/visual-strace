@@ -153,6 +153,12 @@ const showGraph = (straceOutput) => {
 
   const pidSet = new Set();
   const forkSyscalls = new Set(['clone', 'fork', 'vfork']);
+  const ioSyscalls = new Set(['read', 'write']);
+  const supportedSyscalls = new Set([
+    'execve',
+    ...forkSyscalls,
+    ...ioSyscalls,
+  ]);
   const straceInfo = new Map();
   const tasks = [];
   let totalTime = 0;
@@ -249,46 +255,43 @@ const showGraph = (straceOutput) => {
       }
     }
 
-    if (!unfinished) {
+    if (!unfinished && supportedSyscalls.has(syscall)) {
       syscallInfo.returnValue = regexSlice(line, /.* = (-?\d+)/)[1];
-      // TODO reafactor this block, additionalTimeDiff modification in multiple
-      // places is error prone
-      if (forkSyscalls.has(syscall)) {
-        pidSet.add(syscallInfo.returnValue);
-        tasks.push([
-          () => syscallHandler(pid, syscall, syscallInfo),
-          timeDiff + additionalTimeDiff,
-        ]);
-        additionalTimeDiff = 0;
-      } else if (syscall === 'read' || syscall === 'write') {
-        const pipeTarget = regexSlice(syscallInfo.args[0], /\d+<(pipe:\[\d+\])/)[1];
-        if (pipeTarget) {
-          syscallInfo.io = {
-            source: pipeTarget,
-            content: regexSlice(syscallInfo.args[1], /"(.*)"/)[1],
-          };
-          tasks.push([
-            () => {
-              if (fdToPid[syscall][pipeTarget] === undefined) {
-                fdToPid[syscall][pipeTarget] = [pid];
-              } else {
-                fdToPid[syscall][pipeTarget].push(pid);
-              }
-              syscallHandler(pid, syscall, syscallInfo);
-            },
-            timeDiff + additionalTimeDiff,
-          ]);
-          additionalTimeDiff = 0;
-        } else {
-          additionalTimeDiff += timeDiff;
+      additionalTimeDiff = (() => {
+        // schedule task and return pending time diff if any.
+        if (ioSyscalls.has(syscall)) {
+          const pipeTarget = regexSlice(syscallInfo.args[0], /\d+<(pipe:\[\d+\])/)[1];
+          if (pipeTarget) {
+            syscallInfo.io = {
+              source: pipeTarget,
+              content: regexSlice(syscallInfo.args[1], /"(.*)"/)[1],
+            };
+            tasks.push([
+              () => {
+                if (fdToPid[syscall][pipeTarget] === undefined) {
+                  fdToPid[syscall][pipeTarget] = [pid];
+                } else {
+                  fdToPid[syscall][pipeTarget].push(pid);
+                }
+                syscallHandler(pid, syscall, syscallInfo);
+              },
+              timeDiff + additionalTimeDiff,
+            ]);
+            return 0;
+          } else {
+            // read or write that is not on a pipe, we ignore and push back
+            // timediff
+            return timeDiff + additionalTimeDiff;
+          }
+        } else if (forkSyscalls.has(syscall)) {
+          pidSet.add(syscallInfo.returnValue);
         }
-      } else {
         tasks.push([
           () => syscallHandler(pid, syscall, syscallInfo),
           timeDiff + additionalTimeDiff,
         ]);
-        additionalTimeDiff = 0;
-      }
+        return 0; // timediff consumed
+      })();
     } else {
       // no effective action for now, we need to take the current time interval
       // into account for the next one.
