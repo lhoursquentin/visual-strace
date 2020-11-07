@@ -13,6 +13,7 @@ const run = (tasks) => {
       run(nextTasks);
     } else {
       console.log(`All tasks done in a total of: ${totalTasksTime}ms`);
+      totalTasksTime = 0;
       pauseButton.style.display = 'none';
     }
   }, taskTime); // timeout variable unit is seconds
@@ -89,66 +90,66 @@ const showGraph = (straceOutput) => {
     });
   };
 
-  const syscallHandler = (pid, syscall, { args, returnValue, io }) => {
-    if (forkSyscalls.has(syscall)) {
-      const father = cy.getElementById(pid);
+  const forkHandler = (pid, { returnValue }) => {
+    const father = cy.getElementById(pid);
+    cy.add([
+      {
+        group: 'nodes',
+        data: { id: returnValue },
+        renderedPosition: { ...father.renderedPosition },
+      },
+      {
+        group: 'edges',
+        data: {
+          id: `${pid}${returnValue}`,
+          source: pid,
+          target: returnValue,
+        },
+      },
+    ]);
+    cy.layout(options).run();
+  };
+
+  const execveHandler = (pid, { args }) => {
+    if (options.roots.length === 0) {
+      options.roots.push(pid);
       cy.add([
         {
           group: 'nodes',
-          data: { id: returnValue },
-          renderedPosition: { ...father.renderedPosition },
-        },
-        {
-          group: 'edges',
-          data: {
-            id: `${pid}${returnValue}`,
-            source: pid,
-            target: returnValue,
-          },
+          data: { id: pid },
         },
       ]);
       cy.layout(options).run();
-    } else if (syscall === 'execve') {
-      if (options.roots.length === 0) {
-        options.roots.push(pid);
-        cy.add([
-          {
-            group: 'nodes',
-            data: { id: pid },
-          },
-        ]);
-        cy.layout(options).run();
-      }
-      const basename = regexSlice(args[0], /".*\/(.*)"/)[1];
-      cy.getElementById(pid).style({ label: basename });
-    } else if (syscall === 'read') {
-      if (!io) {
-        return;
-      }
-      const { source, content } = io;
-      // FIXME not accurate, this always creates a write/read edge for all the
-      // members of fdToPid, will need to revisit this
-      fdToPid.write[source]?.forEach(originalPid => {
-        const id = `pipe:${originalPid},${pid}`;
-        const style = {
-          'target-arrow-color': 'coral',
-          'line-style': 'dashed',
-          'line-color': 'coral',
-          width: 2,
-        };
-        cy.add([{
-          group: 'edges',
-          data: {
-            id,
-            source: originalPid,
-            target: pid,
-          },
-        }]);
-        cy.getElementById(id).style(style);
-      });
-    } else if (syscall === 'write') {
-      // TODO
     }
+    const basename = regexSlice(args[0], /".*\/(.*)"/)[1];
+    cy.getElementById(pid).style({ label: basename });
+  };
+
+  const readHandler = (pid, { io }) => {
+    if (!io) {
+      return;
+    }
+    const { source, content } = io;
+    // FIXME not accurate, this always creates a write/read edge for all the
+    // members of fdToPid, will need to revisit this
+    fdToPid.write[source]?.forEach(originalPid => {
+      const id = `pipe:${originalPid},${pid}`;
+      const style = {
+        'target-arrow-color': 'coral',
+        'line-style': 'dashed',
+        'line-color': 'coral',
+        width: 2,
+      };
+      cy.add([{
+        group: 'edges',
+        data: {
+          id,
+          source: originalPid,
+          target: pid,
+        },
+      }]);
+      cy.getElementById(id).style(style);
+    });
   };
 
   const pidSet = new Set();
@@ -273,7 +274,9 @@ const showGraph = (straceOutput) => {
                 } else {
                   fdToPid[syscall][pipeTarget].push(pid);
                 }
-                syscallHandler(pid, syscall, syscallInfo);
+                if (syscall === 'read') {
+                  readHandler(pid, syscallInfo);
+                }
               },
               timeDiff + additionalTimeDiff,
             ]);
@@ -285,11 +288,16 @@ const showGraph = (straceOutput) => {
           }
         } else if (forkSyscalls.has(syscall)) {
           pidSet.add(syscallInfo.returnValue);
+          tasks.push([
+            () => forkHandler(pid, syscallInfo),
+            timeDiff + additionalTimeDiff,
+          ]);
+        } else if (syscall === 'execve') {
+          tasks.push([
+            () => execveHandler(pid, syscallInfo),
+            timeDiff + additionalTimeDiff,
+          ]);
         }
-        tasks.push([
-          () => syscallHandler(pid, syscall, syscallInfo),
-          timeDiff + additionalTimeDiff,
-        ]);
         return 0; // timediff consumed
       })();
     } else {
