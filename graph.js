@@ -45,10 +45,7 @@ const showGraph = (straceOutput) => {
     ],
   });
 
-  const fdToPid = {
-    write: {},
-    read: {},
-  };
+  const pipes = {};
 
   const options = {
     name: 'breadthfirst',
@@ -125,14 +122,50 @@ const showGraph = (straceOutput) => {
     cy.getElementById(pid).style({ label: basename });
   };
 
-  const readHandler = (pid, { io }) => {
-    if (!io) {
+  // Succeeding read with write finishing right after, looking like this:
+  // 23063      0.000116 read(4<pipe:[143979]>,  <unfinished ...>
+  // 23087      0.000165 write(1<pipe:[143979]>, "wifi: ", 6 <unfinished ...>
+  // 23063      0.000056 <... read resumed>"wifi: ", 128) = 6
+  // 23087      0.000010 <... write resumed>) = 6
+  const earlyReadBacklog = {};
+
+  const writeHandler = (pid, { io, returnValue }) => {
+    const { pipe } = io;
+    if (pipes[pipe] === undefined) {
+      pipes[pipe] = [];
+    }
+    pipes[pipe].push({ writerPid: pid, length: returnValue });
+    if (!earlyReadBacklog[pipe]) {
       return;
     }
-    const { source, content } = io;
-    // FIXME not accurate, this always creates a write/read edge for all the
-    // members of fdToPid, will need to revisit this
-    fdToPid.write[source]?.forEach(originalPid => {
+    const length = earlyReadBacklog[pipe].length;
+    earlyReadBacklog[pipe].forEach((handler) => handler());
+    earlyReadBacklog[pipe] = earlyReadBacklog[pipe].slice(length);
+  };
+
+  const readFromPipe = (pipe, readLength) => {
+    const { writerPid, length } = pipe.pop();
+    if (readLength > length && pipe.length > 0) {
+      return readFromPipe(pipe, readLength - length).concat([writerPid]);
+    } else {
+      if (readLength < length) {
+        pipe.push({ writerPid, length: length - readLength });
+      }
+      return [writerPid];
+    }
+  };
+
+  const readHandler = (pid, { io, returnValue }) => {
+    const { pipe, content } = io;
+    const pipeContent = pipes[pipe];
+    if (!pipeContent || pipeContent.length === 0) {
+      if (earlyReadBacklog[pipe] === undefined) {
+        earlyReadBacklog[pipe] = [];
+      }
+      earlyReadBacklog[pipe].push(() => readHandler(pid, { io, returnValue }));
+      return;
+    }
+    readFromPipe(pipeContent, returnValue).forEach(originalPid => {
       const id = `pipe:${originalPid},${pid}`;
       const style = {
         'target-arrow-color': 'coral',
@@ -261,26 +294,18 @@ const showGraph = (straceOutput) => {
       additionalTimeDiff = (() => {
         // schedule task and return pending time diff if any.
         if (ioSyscalls.has(syscall)) {
-          const pipeTarget = regexSlice(syscallInfo.args[0], /\d+<(pipe:\[\d+\])/)[1];
-          if (pipeTarget) {
+          const pipe = regexSlice(syscallInfo.args[0], /\d+<(pipe:\[\d+\])/)[1];
+          if (pipe && syscallInfo.returnValue > 0) {
             syscallInfo.io = {
-              source: pipeTarget,
+              pipe,
               content: regexSlice(syscallInfo.args[1], /"(.*)"/)[1],
             };
             tasks.push([
-              () => {
-                if (fdToPid[syscall][pipeTarget] === undefined) {
-                  fdToPid[syscall][pipeTarget] = [pid];
-                } else {
-                  fdToPid[syscall][pipeTarget].push(pid);
-                }
-                if (syscall === 'read') {
-                  readHandler(pid, syscallInfo);
-                }
-              },
+              syscall === 'read'
+                ? () => readHandler(pid, syscallInfo)
+                : () => writeHandler(pid, syscallInfo),
               timeDiff + additionalTimeDiff,
             ]);
-            return 0;
           } else {
             // read or write that is not on a pipe, we ignore and push back
             // timediff
