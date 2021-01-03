@@ -1,0 +1,71 @@
+Data to serialize
+-----------------
+
+- current pid     -> number | compress
+  - might be worth keeping the initial offset, and then go from there to do the
+    compression (instead of 102, 103, 104, go for 100 then 2, 3, 4)
+
+- syscall/event   -> string | compress
+  - can be packed since the number of supported syscalls is very low, first
+    char should indicate the number of syscalls supported in this export
+  - types:
+    - execve
+    - exit (not the actual syscall, more like the event indicated by strace)
+    - fork (and alike)
+    - read
+    - write
+
+- syscall ret val -> number
+
+- pid exit code   -> number
+  - if ended by signal then string, should be converted to number with specific
+    bit set)
+
+- elapsedTime     -> number (microseconds)
+  - should take the longest relative time and the smallest relative time,
+    calculate the expected animation total time and make the smallest 66 times
+    faster than the longest one, then all other should be between 1 and 65
+
+- command name    -> string
+  - could be nice to have it once in the url and use indices to reference it,
+    pretty much like in an ELF
+
+- pipe id         -> number | compress
+  - the real id is meaningless so a a set of consecutive numbers starting from 0
+    should do fine and take minimal space
+
+Notes
+-----
+
+- Final conversion should be url encoded so: [-_.~A-Za-z0-9] (66 unreserved
+  chars total), some weird base 66, because it allows 0 to be different than
+  00 and 000 etc., so it can contain more values
+
+Layout v0
+---------
+
+    header
+    ------
+    1      export version (reserved for potential breaking changes)
+    1      animation duration in seconds (actual elapsed time offsets are then
+           calculated from this)
+    1      next field size
+    [1-66] pid offset
+
+    string table
+    ------------
+    1      string size
+    [1-66] string (no support for chars outside of the unreserved range?)
+    1      "0" string table end marker
+
+    content
+    -------
+    1      syscall/event id
+    1      pid (without offset)
+    1      next field size
+    [1-66] syscall/event ret val
+    1      elapsed time
+    1      next field size
+    [1-66] extra info
+           |- execve     -> cmd name pointer (string table size)
+           |- read/write -> pipe id
