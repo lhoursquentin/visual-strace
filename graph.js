@@ -55,6 +55,11 @@ const showGraph = (straceOutput) => {
     roots: [],
   };
 
+  // TODO not pretty, should be refactored into something more generic
+  const getBasenameFromExecveArgs = (args) => {
+    regexSlice(args[0], /".*\/(.*)"/)[1]
+  };
+
   const regexSlice = (input, regex) => {
     const result = input.match(regex);
     return result ? [
@@ -118,7 +123,7 @@ const showGraph = (straceOutput) => {
       ]);
       cy.layout(options).run();
     }
-    const basename = regexSlice(args[0], /".*\/(.*)"/)[1];
+    const basename = getBasenameFromExecveArgs(args);
     cy.getElementById(pid).style({ label: basename });
   };
 
@@ -200,6 +205,7 @@ const showGraph = (straceOutput) => {
 
   straceOutput.split('\n').forEach(line => {
     const initialLine = line;
+    const contentEntry = {};
     let pid, syscall, timeDiffStr;
     [line, pid] = regexSlice(line, /^(\d+)/);
 
@@ -224,6 +230,11 @@ const showGraph = (straceOutput) => {
       return;
     }
 
+    const pidNb = parseInt(pid);
+    if (!aggregatedData.minPid || aggregatedData.minPid > pid) {
+      aggregatedData.minPid = pid;
+    }
+
     const timeDiff = parseFloat(timeDiffStr);
     totalTime += timeDiff;
     [line, syscall] = regexSlice(line, /^ (\w+)\(/);
@@ -240,6 +251,12 @@ const showGraph = (straceOutput) => {
           () => exitHandler(pid, pidInfo),
           timeDiff + additionalTimeDiff,
         ]);
+        contentList.push({
+          pid: pidNb,
+          syscall: 'exit',
+          returnValue: pidInfo.exit.code,
+          relativeTime: timeDiff + additionalTimeDiff,
+        });
         additionalTimeDiff = 0;
         return;
       } else if (([line, syscall] = regexSlice(line, /^ <\.\.\. (\w+) resumed> */)) && syscall) {
@@ -291,6 +308,7 @@ const showGraph = (straceOutput) => {
 
     if (!unfinished && supportedSyscalls.has(syscall)) {
       syscallInfo.returnValue = regexSlice(line, /.* = (-?\d+)/)[1];
+      extraInfo = {};
       additionalTimeDiff = (() => {
         // schedule task and return pending time diff if any.
         if (ioSyscalls.has(syscall)) {
@@ -306,6 +324,8 @@ const showGraph = (straceOutput) => {
                 : () => writeHandler(pid, syscallInfo),
               timeDiff + additionalTimeDiff,
             ]);
+            extraInfo.pipe = pipe;
+            pidSet.add(extraInfo.pipe);
           } else {
             // read or write that is not on a pipe, we ignore and push back
             // timediff
@@ -322,7 +342,16 @@ const showGraph = (straceOutput) => {
             () => execveHandler(pid, syscallInfo),
             timeDiff + additionalTimeDiff,
           ]);
+          extraInfo.cmd = getBasenameFromExecveArgs(syscallInfo.args);
+          stringSet.add(extraInfo.cmd)
         }
+        contentList.push({
+          pid: pidNb,
+          syscall,
+          returnValue: syscallInfo.returnValue,
+          relativeTime: timeDiff + additionalTimeDiff,
+          ...extraInfo,
+        });
         return 0; // timediff consumed
       })();
     } else {

@@ -60,10 +60,14 @@ Layout v0
 
     content
     -------
-    1      syscall/event id
-    1      pid (without offset)
     1      next field size
+    [1-66] pid (without offset)
+    1      syscall/event id
+    1      next field size
+           (in the case of exit need to have a special value to indicate a
+            potential signal, maybe 0 would indicate that?)
     [1-66] syscall/event ret val
+           (for forks this will be modified via the pid offset)
     1      elapsed time
     1      next field size
     [1-66] extra info
