@@ -14,21 +14,22 @@ const charset = [
 ];
 
 const decimalToCharBase = (nb) => {
-  const div = Math.floor(nb / charset.length);
-  const rest = nb % charset.length;
+  const intNb = Math.floor(nb);
+  const div = Math.floor(intNb / charset.length);
+  const rest = intNb % charset.length;
   return div > 0
     ? `${decimalToCharBase(div - 1, charset)}${charset[rest]}`
     : `${charset[rest]}`;
 };
 
 const syscallToIdTuples = [
-  [execve, 0],
-  [clone, 1],
-  [fork, 1],
-  [vfork, 1],
-  [exit, 2],
-  [read, 3],
-  [write, 4],
+  ['execve', 0],
+  ['clone', 1],
+  ['fork', 1],
+  ['vfork', 1],
+  ['exit', 2],
+  ['read', 3],
+  ['write', 4],
 ];
 
 const signalToNbTuples = [
@@ -82,10 +83,10 @@ const aggregatedData = {
 };
 
 const updateTimeDiff = (timeDiff) => {
-  if (if aggregatedData.timeDiff.min === 0 || timeDiff < aggregatedData.timeDiff.min) {
+  if (aggregatedData.timeDiff.min === 0 || timeDiff < aggregatedData.timeDiff.min) {
     aggregatedData.timeDiff.min = timeDiff;
   }
-  if (if aggregatedData.timeDiff.max === 0 || timeDiff > aggregatedData.timeDiff.max) {
+  if (aggregatedData.timeDiff.max === 0 || timeDiff > aggregatedData.timeDiff.max) {
     aggregatedData.timeDiff.max = timeDiff;
   }
 };
@@ -99,9 +100,9 @@ const exportToUrlV0 = () => {
     return `${decimalToCharBase(fieldToCharBase.length)}${fieldToCharBase}`
   };
   const formatReturnValue = (syscall, returnValueStr) => {
-    const returnValue = parseInt(returnValue);
-    if (syscall === 'fork') {
-      return getFieldPrefixedWithSize(returnValue - minPid);
+    const returnValue = parseInt(returnValueStr);
+    if (forkSyscalls.has(syscall)) {
+      return getFieldPrefixedWithSize(returnValue - aggregatedData.minPid);
     } else if (syscall === 'exit' && isNaN(returnValue)) {
       const signalNb = signalToNbMap.get(returnValue);
       return `0${decimalToCharBase(signalNb)}`;
@@ -120,33 +121,33 @@ const exportToUrlV0 = () => {
   ].join('');
 
   const stringTable = [...stringSet]
-    .map(str => `${decimalToCharBase(str.length)}${str}`)
+    .map(s => `${decimalToCharBase(s.length)}${s}`)
     .join('')
     + '0';
   const mainContent = contentList.map(
-    { pid, syscall, returnValue, relativeTime, pipe, cmd} => {
-    return [
-      getFieldPrefixedWithSize(pid - minPid),
+    ({ pid, syscall, returnValue, relativeTime, pipe, cmd }) => ([
+      // [pid, syscall, returnValue, relativeTime, pipe, cmd].join(', '),
+      getFieldPrefixedWithSize(pid - aggregatedData.minPid),
       decimalToCharBase(syscallToIdMap.get(syscall)),
       getFieldPrefixedWithSize(returnValue),
       formatReturnValue(syscall, returnValue),
-      decimalToCharBase(
+      relativeTime === 0 ? '0' : decimalToCharBase(
         (relativeTime - aggregatedData.timeDiff.min)
         / aggregatedData.timeDiff.max * charset.length
       ),
       (() => {
         if (syscall === 'execve') {
-          const stringTableIndex = stringToIndex(cmd);
+          const stringTableIndex = stringToIndex[cmd];
           return getFieldPrefixedWithSize(stringTableIndex);
         } else if (ioSyscalls.has(syscall)) {
-          const pipeId = pipeToIndex(pipe);
+          const pipeId = pipeToIndex[pipe];
           return getFieldPrefixedWithSize(pipeId);
         } else {
           return '0'
         }
       })(),
-    ].join('');
-  }).join('');
+    ].join('')
+  )).join('');
 
   return [
     header,

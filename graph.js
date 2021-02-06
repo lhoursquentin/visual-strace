@@ -2,6 +2,14 @@ var currentTimeout;
 var remainingTasks = [];
 let totalTasksTime = 0;
 
+const forkSyscalls = new Set(['clone', 'fork', 'vfork']);
+const ioSyscalls = new Set(['read', 'write']);
+const supportedSyscalls = new Set([
+  'execve',
+  ...forkSyscalls,
+  ...ioSyscalls,
+]);
+
 const run = (tasks) => {
   const [[fn, timeout], ...nextTasks] = tasks;
   remainingTasks = tasks;
@@ -56,9 +64,9 @@ const showGraph = (straceOutput) => {
   };
 
   // TODO not pretty, should be refactored into something more generic
-  const getBasenameFromExecveArgs = (args) => {
+  const getBasenameFromExecveArgs = (args) => (
     regexSlice(args[0], /".*\/(.*)"/)[1]
-  };
+  );
 
   const regexSlice = (input, regex) => {
     const result = input.match(regex);
@@ -190,13 +198,6 @@ const showGraph = (straceOutput) => {
     });
   };
 
-  const forkSyscalls = new Set(['clone', 'fork', 'vfork']);
-  const ioSyscalls = new Set(['read', 'write']);
-  const supportedSyscalls = new Set([
-    'execve',
-    ...forkSyscalls,
-    ...ioSyscalls,
-  ]);
   const straceInfo = new Map();
   const tasks = [];
   let totalTime = 0;
