@@ -41,16 +41,23 @@ Notes
   chars total), some weird base 66, because it allows 0 to be different than
   00 and 000 etc., so it can contain more values
 
+- elapsed time example:
+  - smallest interval: 5
+  - biggest interval: 200
+  - actual set: 10, 20, 5, 15, 200, 30, 150
+  - result set: ??, ??, 1, ??,  66, ??,  ??
+  - (value - smallest) / biggest * 66
+
 Layout v0
 ---------
 
     header
     ------
     1      export version (reserved for potential breaking changes)
-    1      animation duration in seconds (actual elapsed time offsets are then
-           calculated from this)
+    1      animation time (in seconds, time offset are then fraction integers
+                           of this value calculated from this)
     1      next field size
-    [1-66] pid offset
+    [1-66] min pid (pid offsets are then calculated from this)
 
     string table
     ------------
@@ -64,11 +71,11 @@ Layout v0
     [1-66] pid (without offset)
     1      syscall/event id
     1      next field size
-           (in the case of exit need to have a special value to indicate a
-            potential signal, maybe 0 would indicate that?)
+           (0 in case of exit via signal)
     [1-66] syscall/event ret val
-           (for forks this will be modified via the pid offset)
-    1      elapsed time
+           (for forks this will be modified via the pid offset, for exit via
+            signal will be x86 signal nb)
+    1      elapsed time (relative to max one)
     1      next field size
     [1-66] extra info
            |- execve     -> cmd name pointer (string table size)

@@ -190,7 +190,6 @@ const showGraph = (straceOutput) => {
     });
   };
 
-  const pidSet = new Set();
   const forkSyscalls = new Set(['clone', 'fork', 'vfork']);
   const ioSyscalls = new Set(['read', 'write']);
   const supportedSyscalls = new Set([
@@ -257,6 +256,7 @@ const showGraph = (straceOutput) => {
           returnValue: pidInfo.exit.code,
           relativeTime: timeDiff + additionalTimeDiff,
         });
+        updateTimeDiff(timeDiff + additionalTimeDiff);
         additionalTimeDiff = 0;
         return;
       } else if (([line, syscall] = regexSlice(line, /^ <\.\.\. (\w+) resumed> */)) && syscall) {
@@ -308,8 +308,8 @@ const showGraph = (straceOutput) => {
 
     if (!unfinished && supportedSyscalls.has(syscall)) {
       syscallInfo.returnValue = regexSlice(line, /.* = (-?\d+)/)[1];
-      extraInfo = {};
       additionalTimeDiff = (() => {
+        const extraInfo = {};
         // schedule task and return pending time diff if any.
         if (ioSyscalls.has(syscall)) {
           const pipe = regexSlice(syscallInfo.args[0], /\d+<(pipe:\[\d+\])/)[1];
@@ -325,14 +325,13 @@ const showGraph = (straceOutput) => {
               timeDiff + additionalTimeDiff,
             ]);
             extraInfo.pipe = pipe;
-            pidSet.add(extraInfo.pipe);
+            pipeSet.add(extraInfo.pipe);
           } else {
             // read or write that is not on a pipe, we ignore and push back
             // timediff
             return timeDiff + additionalTimeDiff;
           }
         } else if (forkSyscalls.has(syscall)) {
-          pidSet.add(syscallInfo.returnValue);
           tasks.push([
             () => forkHandler(pid, syscallInfo),
             timeDiff + additionalTimeDiff,
@@ -343,7 +342,7 @@ const showGraph = (straceOutput) => {
             timeDiff + additionalTimeDiff,
           ]);
           extraInfo.cmd = getBasenameFromExecveArgs(syscallInfo.args);
-          stringSet.add(extraInfo.cmd)
+          stringSet.add(extraInfo.cmd);
         }
         contentList.push({
           pid: pidNb,
@@ -352,6 +351,7 @@ const showGraph = (straceOutput) => {
           relativeTime: timeDiff + additionalTimeDiff,
           ...extraInfo,
         });
+        updateTimeDiff(timeDiff + additionalTimeDiff);
         return 0; // timediff consumed
       })();
     } else {
