@@ -69,13 +69,13 @@ Layout v0
     -------
     1      next field size
     [1-66] pid (without offset)
+    1      elapsed time (relative to max one)
     1      syscall/event id
     1      next field size
            (0 in case of exit via signal)
     [1-66] syscall/event ret val
            (for forks this will be modified via the pid offset, for exit via
             signal will be x86 signal nb)
-    1      elapsed time (relative to max one)
     1      next field size
     [1-66] extra info
            |- execve     -> cmd name pointer (string table size)

@@ -313,7 +313,7 @@ const showGraph = (straceOutput) => {
         const extraInfo = {};
         // schedule task and return pending time diff if any.
         if (ioSyscalls.has(syscall)) {
-          const pipe = regexSlice(syscallInfo.args[0], /\d+<(pipe:\[\d+\])/)[1];
+          const pipe = regexSlice(syscallInfo.args[0], /[?\d]+<(pipe:\[\d+\])/)[1];
           if (pipe && syscallInfo.returnValue > 0) {
             syscallInfo.io = {
               pipe,
