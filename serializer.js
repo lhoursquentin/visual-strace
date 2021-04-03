@@ -22,6 +22,14 @@ const decimalToCharBase = (nb) => {
     : `${charset[rest]}`;
 };
 
+// indexOf(char) is not very efficient, ideally use a hashmap with char to index
+const charBaseToDecimal = (str) => [...str].reverse().reduce(
+  (acc, char, index) =>
+    acc
+    + charset.indexOf(char) * charset.length ** index
+    + (index && charset.length ** index)
+, 0);
+
 const syscallToIdTuples = [
   ['execve', 0],
   ['clone', 1],
@@ -154,4 +162,13 @@ const exportToUrlV0 = () => {
     stringTable,
     mainContent,
   ].join('');
+};
+
+const importFromUrlV0 = () => {
+  const query = new URLSearchParams(window.location.search).get('q');
+  const version = charBaseToDecimal(query[0]);
+  if (version !== 0) {
+    console.error('Trying to deserialize incompatible version')
+    return;
+  }
 };
