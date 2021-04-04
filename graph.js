@@ -244,7 +244,7 @@ const showGraph = (straceOutput) => {
       if ((
         pidInfo.exit.code = (
           regexSlice(line, /^ \+\+\+ exited with (\d+) \+\+\+/)[1] ||
-          regexSlice(line, /^ \+\+\+ killed by SIG([^ ]+) \+\+\+/)[1]
+          regexSlice(line, /^ \+\+\+ killed by SIG([^ ]+) .*\+\+\+/)[1]
         )
       )) {
         pidInfo.exit.time = totalTime;
