@@ -308,8 +308,9 @@ const showGraph = (straceOutput) => {
       }
     }
 
-    if (!unfinished && supportedSyscalls.has(syscall)) {
-      syscallInfo.returnValue = regexSlice(line, /.* = (-?\d+)/)[1];
+    const returnValue = regexSlice(line, /.* = (-?\d+)/)[1];
+    if (!unfinished && returnValue >= 0 && supportedSyscalls.has(syscall)) {
+      syscallInfo.returnValue = returnValue;
       additionalTimeDiff = (() => {
         const extraInfo = {};
         // schedule task and return pending time diff if any.
