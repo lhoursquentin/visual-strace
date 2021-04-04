@@ -9,7 +9,21 @@ Graph building and representation is done with [cytoscape.js](https://js.cytosca
 To try it out:
 [https://lhoursquentin.github.io/visual-strace/](https://lhoursquentin.github.io/visual-strace/).
 
-# Some quick examples:
+# How to read the graph
+
+- Grey arrows represent father/children process relationships via `fork` (or
+  similar) syscalls
+- Orange arrows represent read and write syscalls, the origin process is the
+  writer and the destination process is the reader
+- Green dots are processes that ended with a zero exit code
+- Red dots are processes that ended with a non-zero exit code, which is
+  specified between parentheses
+- Purple dots are processes that ended due to a signal, which is specified
+  between parentheses
+- Labels are either set with the process ID returned by a `fork` (or similar)
+  syscall or with the basename of binary of a successful `execve`
+
+# Some quick examples
 
 ```sh
 libtool --help
