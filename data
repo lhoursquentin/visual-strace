@@ -54,8 +54,6 @@ Layout v0
     header
     ------
     1      export version (reserved for potential breaking changes)
-    1      animation time (in seconds, time offset are then fraction integers
-                           of this value calculated from this)
     1      next field size
     [1-66] min pid (pid offsets are then calculated from this)
 
@@ -69,7 +67,7 @@ Layout v0
     -------
     1      next field size
     [1-66] pid (without offset)
-    1      elapsed time (relative to max one)
+    1      elapsed time (with 1/66th precision relative to max/min values)
     1      syscall/event id
     1      next field size
            (0 in case of exit via signal)

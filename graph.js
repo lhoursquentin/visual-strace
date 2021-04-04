@@ -2,6 +2,7 @@ var currentTimeout;
 var remainingTasks = [];
 let totalTasksTime = 0;
 
+const exportUrlElement = document.getElementById('export-url');
 const forkSyscalls = new Set(['clone', 'fork', 'vfork']);
 const ioSyscalls = new Set(['read', 'write']);
 const supportedSyscalls = new Set([
@@ -231,8 +232,8 @@ const showGraph = (straceOutput) => {
     }
 
     const pidNb = parseInt(pid);
-    if (!aggregatedData.minPid || aggregatedData.minPid > pid) {
-      aggregatedData.minPid = pid;
+    if (aggregatedData['minPid'] === undefined || aggregatedData['minPid'] > pid) {
+      aggregatedData['minPid'] = pid;
     }
 
     const timeDiff = parseFloat(timeDiffStr);
@@ -374,6 +375,14 @@ const showGraph = (straceOutput) => {
     setupSpeedInputs(totalTime, straceInfo.size);
     speedSetupNeeded = false;
   }
+
+  exportUrlElement.style.display = 'block'
+  exportUrlElement.href = `${window.location.pathname}?q=${exportToUrlV0()}`;
+  // FIXME resetting global variables here is not a good idea
+  contentList = [];
+  stringSet = new Set();
+  pipeSet = new Set();
+  aggregatedData = {};
 
   run(tasks);
 };

@@ -1,9 +1,9 @@
 const header = {};
 
-const stringSet = new Set();
-const pipeSet = new Set();
+let stringSet = new Set();
+let pipeSet = new Set();
 
-const contentList = [];
+let contentList = [];
 
 const charset = [
   '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e',
@@ -82,20 +82,14 @@ const getTwoWayMap = (tuples) => ([
 const [syscallToIdMap, idToSyscallMap] = getTwoWayMap(syscallToIdTuples);
 const [signalToNbMap, nbToSignalMap] = getTwoWayMap(signalToNbTuples);
 
-const aggregatedData = {
-  minPid: 0,
-  timeDiff: {
-    min: 0,
-    max: 0,
-  },
-};
+let aggregatedData = {};
 
 const updateTimeDiff = (timeDiff) => {
-  if (aggregatedData.timeDiff.min === 0 || timeDiff < aggregatedData.timeDiff.min) {
-    aggregatedData.timeDiff.min = timeDiff;
+  if (aggregatedData['timeDiffMin'] === undefined || timeDiff < aggregatedData['timeDiffMin']) {
+    aggregatedData['timeDiffMin'] = timeDiff;
   }
-  if (aggregatedData.timeDiff.max === 0 || timeDiff > aggregatedData.timeDiff.max) {
-    aggregatedData.timeDiff.max = timeDiff;
+  if (aggregatedData['timeDiffMax'] === undefined || timeDiff > aggregatedData['timeDiffMax']) {
+    aggregatedData['timeDiffMax'] = timeDiff;
   }
 };
 
@@ -119,12 +113,10 @@ const exportToUrlV0 = () => {
     }
   };
   const version = 0;
-  const animationDuration = Math.min(contentList.length, defaultAnimationDuration);
 
   // all map + join '' could be replaced by a single reduce
   const header = [
     decimalToCharBase(version),
-    decimalToCharBase(animationDuration),
     getFieldPrefixedWithSize(aggregatedData.minPid),
   ].join('');
 
@@ -134,11 +126,10 @@ const exportToUrlV0 = () => {
     + '0';
   const mainContent = contentList.map(
     ({ pid, syscall, returnValue, relativeTime, pipe, cmd }) => ([
-      // [pid, syscall, returnValue, relativeTime, pipe, cmd].join(', '),
       getFieldPrefixedWithSize(pid - aggregatedData.minPid),
-      relativeTime === 0 ? '0' : decimalToCharBase(
-        (relativeTime - aggregatedData.timeDiff.min)
-        / aggregatedData.timeDiff.max * charset.length
+      decimalToCharBase(
+        (relativeTime - aggregatedData.timeDiffMin)
+        / aggregatedData.timeDiffMax * (charset.length - 1)
       ),
       decimalToCharBase(syscallToIdMap.get(syscall)),
       formatReturnValue(syscall, returnValue),
@@ -165,6 +156,9 @@ const exportToUrlV0 = () => {
 
 const importFromUrlV0 = () => {
   let query = new URLSearchParams(window.location.search).get('q');
+  if (!query) {
+    return '';
+  }
   const processQuery = (size, handler) => {
     const rawValue = query.slice(0, size);
     const value = handler ? handler(rawValue) : rawValue;
@@ -180,7 +174,6 @@ const importFromUrlV0 = () => {
     console.error('Trying to deserialize incompatible version')
     return;
   }
-  const animationDuration = processQuery(1, charBaseToDecimal);
   const minPid = processQueryWithFieldSize(charBaseToDecimal);
 
   const stringTable = [];
@@ -193,7 +186,6 @@ const importFromUrlV0 = () => {
   while (query) {
     let pid = processQueryWithFieldSize(charBaseToDecimal) + minPid;
     let relativeTime = processQuery(1, charBaseToDecimal);
-    // Doesn't look like this time calculation is correct
     let ellapsedTime = `0.${relativeTime}`;
     let syscallId = processQuery(1, charBaseToDecimal);
     let syscall = idToSyscallMap.get(syscallId);
