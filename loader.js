@@ -1,4 +1,3 @@
-const loadExampleButton = document.getElementById('load-example');
 const runButton = document.getElementById('run');
 const straceCmdInput = document.getElementById('strace-cmd');
 const straceOutputElement = document.getElementById('strace-output');
@@ -7,10 +6,6 @@ const loaderContent = document.getElementById('loader-content');
 const straceFileInput = document.getElementById('strace-file-input');
 
 var speedSetupNeeded = true;
-
-const loadExample = () => {
-  loadStraceOutputArea(exampleStraceOutput);
-};
 
 const loadStraceOutputArea = (straceContent) => {
   speedSetupNeeded = true;
@@ -59,7 +54,6 @@ const readFileContents = ({ target: { files: [file] } }) => {
   };
 };
 
-loadExampleButton.addEventListener('click', loadExample);
 runButton.addEventListener('click', loadStrace);
 straceOutputElement.addEventListener('input', straceOutputChange);
 straceOutputElement.addEventListener('input', straceOutputChange);
