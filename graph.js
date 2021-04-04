@@ -232,8 +232,8 @@ const showGraph = (straceOutput) => {
     }
 
     const pidNb = parseInt(pid);
-    if (aggregatedData['minPid'] === undefined || aggregatedData['minPid'] > pid) {
-      aggregatedData['minPid'] = pid;
+    if (aggregatedData.minPid === undefined || aggregatedData.minPid > pid) {
+      aggregatedData.minPid = pid;
     }
 
     const timeDiff = parseFloat(timeDiffStr);

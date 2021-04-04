@@ -66,7 +66,7 @@ straceFileInput.addEventListener('change', readFileContents);
 // Using input.size is clearer but is somehow slightly wider than the content
 straceCmdInput.style.width = `${straceCmdInput.value.length}ch`;
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener('DOMContentLoaded', () => {
   const straceOutputFromUrl = importFromUrlV0();
   if (straceOutputFromUrl) {
     generateExportUrl = false;

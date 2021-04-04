@@ -1,5 +1,3 @@
-const header = {};
-
 let stringSet = new Set();
 let pipeSet = new Set();
 
@@ -25,10 +23,11 @@ const decimalToCharBase = (nb) => {
 // indexOf(char) is not very efficient, ideally use a hashmap with char to index
 const charBaseToDecimal = (str) => [...str].reverse().reduce(
   (acc, char, index) =>
-    acc
-    + charset.indexOf(char) * charset.length ** index
-    + (index && charset.length ** index)
-, 0);
+    acc +
+    charset.indexOf(char) * charset.length ** index +
+    (index && charset.length ** index),
+  0,
+);
 
 const syscallToIdTuples = [
   ['execve', 0],
@@ -85,11 +84,11 @@ const [signalToNbMap, nbToSignalMap] = getTwoWayMap(signalToNbTuples);
 let aggregatedData = {};
 
 const updateTimeDiff = (timeDiff) => {
-  if (aggregatedData['timeDiffMin'] === undefined || timeDiff < aggregatedData['timeDiffMin']) {
-    aggregatedData['timeDiffMin'] = timeDiff;
+  if (aggregatedData.timeDiffMin === undefined || timeDiff < aggregatedData.timeDiffMin) {
+    aggregatedData.timeDiffMin = timeDiff;
   }
-  if (aggregatedData['timeDiffMax'] === undefined || timeDiff > aggregatedData['timeDiffMax']) {
-    aggregatedData['timeDiffMax'] = timeDiff;
+  if (aggregatedData.timeDiffMax === undefined || timeDiff > aggregatedData.timeDiffMax) {
+    aggregatedData.timeDiffMax = timeDiff;
   }
 };
 
@@ -99,7 +98,7 @@ const exportToUrlV0 = () => {
 
   const getFieldPrefixedWithSize = (field) => {
     const fieldToCharBase = decimalToCharBase(field);
-    return `${decimalToCharBase(fieldToCharBase.length)}${fieldToCharBase}`
+    return `${decimalToCharBase(fieldToCharBase.length)}${fieldToCharBase}`;
   };
   const formatReturnValue = (syscall, returnValueStr) => {
     const returnValue = parseInt(returnValueStr);
@@ -122,14 +121,13 @@ const exportToUrlV0 = () => {
 
   const stringTable = [...stringSet]
     .map(s => `${decimalToCharBase(s.length)}${s}`)
-    .join('')
-    + '0';
+    .join('') + '0';
   const mainContent = contentList.map(
     ({ pid, syscall, returnValue, relativeTime, pipe, cmd }) => ([
       getFieldPrefixedWithSize(pid - aggregatedData.minPid),
       decimalToCharBase(
-        (relativeTime - aggregatedData.timeDiffMin)
-        / aggregatedData.timeDiffMax * (charset.length - 1)
+        (relativeTime - aggregatedData.timeDiffMin) /
+        aggregatedData.timeDiffMax * (charset.length - 1),
       ),
       decimalToCharBase(syscallToIdMap.get(syscall)),
       formatReturnValue(syscall, returnValue),
@@ -141,11 +139,10 @@ const exportToUrlV0 = () => {
           const pipeId = pipeToIndex[pipe];
           return getFieldPrefixedWithSize(pipeId);
         } else {
-          return '0'
+          return '0';
         }
       })(),
-    ].join('')
-  )).join('');
+    ].join(''))).join('');
 
   return [
     header,
@@ -167,55 +164,55 @@ const importFromUrlV0 = () => {
   };
 
   const processQueryWithFieldSize = (handler) =>
-    processQuery(processQuery(1, charBaseToDecimal), handler)
+    processQuery(processQuery(1, charBaseToDecimal), handler);
 
   const version = processQuery(1, charBaseToDecimal);
   if (version !== 0) {
-    console.error('Trying to deserialize incompatible version')
+    console.error('Trying to deserialize incompatible version');
     return;
   }
   const minPid = processQueryWithFieldSize(charBaseToDecimal);
 
   const stringTable = [];
-  while (query[0] != '0') {
-    stringTable.push(processQueryWithFieldSize()); 
+  while (query[0] !== '0') {
+    stringTable.push(processQueryWithFieldSize());
   }
   processQuery(1);
 
   const contentTable = [];
   while (query) {
-    let pid = processQueryWithFieldSize(charBaseToDecimal) + minPid;
-    let relativeTime = processQuery(1, charBaseToDecimal);
-    let ellapsedTime = `0.${relativeTime}`;
-    let syscallId = processQuery(1, charBaseToDecimal);
-    let syscall = idToSyscallMap.get(syscallId);
+    const pid = processQueryWithFieldSize(charBaseToDecimal) + minPid;
+    const relativeTime = processQuery(1, charBaseToDecimal);
+    const ellapsedTime = `0.${relativeTime}`;
+    const syscallId = processQuery(1, charBaseToDecimal);
+    const syscall = idToSyscallMap.get(syscallId);
     let syscallInfo;
     if (forkSyscalls.has(syscall)) {
-      let childPid = minPid + processQueryWithFieldSize(charBaseToDecimal);
+      const childPid = minPid + processQueryWithFieldSize(charBaseToDecimal);
       syscallInfo = `fork(...) = ${childPid}`;
-      processQuery(1)
+      processQuery(1);
     } else if (syscall === 'exit') {
-      let exitRetValFieldSize = processQuery(1, charBaseToDecimal);
+      const exitRetValFieldSize = processQuery(1, charBaseToDecimal);
       if (exitRetValFieldSize === 0) {
-        let signal = nbToSignalMap.get(processQuery(1, charBaseToDecimal));
-        syscallInfo = `killed by SIG${signal}`
+        const signal = nbToSignalMap.get(processQuery(1, charBaseToDecimal));
+        syscallInfo = `killed by SIG${signal}`;
       } else {
-        let exitCode = processQuery(exitRetValFieldSize, charBaseToDecimal);
-        syscallInfo = `exited with ${exitCode}`
+        const exitCode = processQuery(exitRetValFieldSize, charBaseToDecimal);
+        syscallInfo = `exited with ${exitCode}`;
       }
-      syscallInfo = `+++ ${syscallInfo} +++`
-      processQuery(1)
+      syscallInfo = `+++ ${syscallInfo} +++`;
+      processQuery(1);
     } else if (ioSyscalls.has(syscall)) {
-      let syscallRetVal = processQueryWithFieldSize(charBaseToDecimal);
-      let pipeId = processQueryWithFieldSize(charBaseToDecimal);
-      syscallInfo = `${syscall}(?<pipe:[${pipeId}]>, ...) = ${syscallRetVal}`
+      const syscallRetVal = processQueryWithFieldSize(charBaseToDecimal);
+      const pipeId = processQueryWithFieldSize(charBaseToDecimal);
+      syscallInfo = `${syscall}(?<pipe:[${pipeId}]>, ...) = ${syscallRetVal}`;
     } else if (syscall === 'execve') {
-      let syscallRetVal = processQueryWithFieldSize(charBaseToDecimal);
-      let cmdNamePointer = processQueryWithFieldSize(charBaseToDecimal);
-      let cmdName = stringTable[cmdNamePointer];
-      syscallInfo = `execve("./${cmdName}", ...) = ${syscallRetVal}`
+      const syscallRetVal = processQueryWithFieldSize(charBaseToDecimal);
+      const cmdNamePointer = processQueryWithFieldSize(charBaseToDecimal);
+      const cmdName = stringTable[cmdNamePointer];
+      syscallInfo = `execve("./${cmdName}", ...) = ${syscallRetVal}`;
     }
-    contentTable.push(`${pid}  ${ellapsedTime} ${syscallInfo}`)
+    contentTable.push(`${pid}  ${ellapsedTime} ${syscallInfo}`);
   }
   return contentTable.join('\n');
 };
