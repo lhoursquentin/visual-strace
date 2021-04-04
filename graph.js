@@ -377,8 +377,10 @@ const showGraph = (straceOutput) => {
     speedSetupNeeded = false;
   }
 
-  exportUrlElement.style.display = 'block'
-  exportUrlElement.href = `${window.location.pathname}?q=${exportToUrlV0()}`;
+  if (generateExportUrl) {
+    exportUrlElement.style.display = 'block';
+    exportUrlElement.href = `${window.location.pathname}?q=${exportToUrlV0()}`;
+  }
   // FIXME resetting global variables here is not a good idea
   contentList = [];
   stringSet = new Set();

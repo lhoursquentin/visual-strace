@@ -6,6 +6,7 @@ const loaderContent = document.getElementById('loader-content');
 const straceFileInput = document.getElementById('strace-file-input');
 
 var speedSetupNeeded = true;
+var generateExportUrl = false;
 
 const loadStraceOutputArea = (straceContent) => {
   speedSetupNeeded = true;
@@ -23,6 +24,7 @@ const straceOutputChange = ({ target: { value } }) => {
   // If we change the strace output, reset the speed default values on the next
   // run
   speedSetupNeeded = true;
+  generateExportUrl = true;
   runButton.disabled = value.trim() === '';
 };
 
@@ -50,6 +52,7 @@ const readFileContents = ({ target: { files: [file] } }) => {
   const reader = new FileReader();
   reader.readAsText(file, 'UTF-8');
   reader.onload = ({ target: { result } }) => {
+    generateExportUrl = true;
     loadStraceOutputArea(result);
   };
 };
@@ -66,6 +69,7 @@ straceCmdInput.style.width = `${straceCmdInput.value.length}ch`;
 document.addEventListener("DOMContentLoaded", () => {
   const straceOutputFromUrl = importFromUrlV0();
   if (straceOutputFromUrl) {
+    generateExportUrl = false;
     loadStraceOutputArea(straceOutputFromUrl);
   }
 });
