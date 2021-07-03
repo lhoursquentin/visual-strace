@@ -23,13 +23,14 @@ const run = (tasks) => {
     } else {
       console.log(`All tasks done in a total of: ${totalTasksTime}ms`);
       totalTasksTime = 0;
-      pauseButton.style.display = 'none';
+      pauseButton.innerText = 'Rerun';
     }
   }, taskTime); // timeout variable unit is seconds
 };
 
 const showGraph = (straceOutput) => {
   pauseButton.style.display = 'block';
+  pauseButton.innerText = 'Pause';
   var cy = cytoscape({
     container: document.getElementById('cy'),
     style: [ // the stylesheet for the graph

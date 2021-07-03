@@ -13,8 +13,7 @@ const updateSpeedInputs = (attributes) => {
   [slider, valueBox].forEach(updateProps);
 };
 
-const isAnimationRunning = () =>
-  pauseButton.innerText === 'Pause' && pauseButton.style.display !== 'none';
+const isAnimationRunning = () => pauseButton.innerText === 'Pause';
 
 const handleSpeedChange = ({ target }) => {
   speed = Number.parseFloat(target.value);
@@ -31,11 +30,13 @@ const togglePause = ({ target }) => {
       clearTimeout(currentTimeout);
     }
     target.innerText = 'Resume';
-  } else {
+  } else if (target.innerText === 'Resume') {
     target.innerText = 'Pause';
     if (remainingTasks?.length > 0) {
       run(remainingTasks);
     }
+  } else { // rerun
+    loadStrace();
   }
 };
 
