@@ -8,17 +8,17 @@ const pauseButton = document.getElementById('pause-button');
 
 var speed;
 
-const updateSpeedInputs = () => {
-  slider.value = speed;
-  valueBox.value = speed;
+const updateSpeedInputs = (attributes) => {
+  const updateProps = (obj) => Object.assign(obj, attributes);
+  [slider, valueBox].forEach(updateProps);
 };
 
 const isAnimationRunning = () =>
   pauseButton.innerText === 'Pause' && pauseButton.style.display !== 'none';
 
 const handleSpeedChange = ({ target }) => {
-  speed = target.value;
-  updateSpeedInputs();
+  speed = Number.parseFloat(target.value);
+  updateSpeedInputs({ value: speed });
   if (isAnimationRunning() && remainingTasks?.length > 0) {
     clearTimeout(currentTimeout);
     run(remainingTasks);
@@ -39,6 +39,16 @@ const togglePause = ({ target }) => {
   }
 };
 
+// For nbSignicantDigits === 2:
+// 1234.5678       -> 1235
+// 0.12345678      -> 0.12
+// 0.0000012345678 -> 0.0000012
+const prettifyNumber = (nb, nbSignicantDigits) =>
+  nb === 0
+    ? nb
+    : nb.toFixed(Math.max(0, nbSignicantDigits - Math.log10(nb)))
+    ;
+
 const setupSpeedInputs = (totalTime, totalNodes) => {
   pauseButton.addEventListener('click', togglePause);
   slider.addEventListener('input', handleSpeedChange);
@@ -48,10 +58,18 @@ const setupSpeedInputs = (totalTime, totalNodes) => {
   const defaultSpeed = (
     1 / (totalTime / Math.min(totalNodes, defaultAnimationDuration))
   );
-  speed = defaultSpeed;
-  slider.min = 1 / (totalTime / minAnimationDuration);
-  slider.max = defaultSpeed * 10;
-  updateSpeedInputs();
+  const roundedSpeed = prettifyNumber(defaultSpeed, 2);
+  const step = prettifyNumber(roundedSpeed / 5, 2);
+  const min = prettifyNumber(1 / (totalTime / minAnimationDuration), 1);
+  const max = roundedSpeed * 10;
+  speed = roundedSpeed;
+
+  updateSpeedInputs({
+    min,
+    max,
+    step,
+    value: speed,
+  });
 
   document.getElementById('speed-controller').style.visibility = 'visible';
 };
