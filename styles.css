@@ -94,3 +94,9 @@ code > input {
   bottom: 10px;
   left: 10px;
 }
+
+#progress-line {
+  height: 1%;
+  width: 0;
+  background-color: orange;
+}

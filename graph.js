@@ -1,8 +1,11 @@
 var currentTimeout;
 var remainingTasks = [];
-let totalTasksTime = 0;
+let ellapsedTime = 0;
+let estimatedTotalTime = 0;
+
 
 const exportUrlElement = document.getElementById('export-url');
+const progressLineElement = document.getElementById('progress-line');
 const forkSyscalls = new Set(['clone', 'fork', 'vfork']);
 const ioSyscalls = new Set(['read', 'write']);
 const supportedSyscalls = new Set([
@@ -15,14 +18,14 @@ const run = (tasks) => {
   const [[fn, timeout], ...nextTasks] = tasks;
   remainingTasks = tasks;
   const taskTime = speed * timeout * 1000;
-  totalTasksTime += taskTime;
   currentTimeout = setTimeout(() => {
     fn();
+    ellapsedTime += timeout;
+    progressLineElement.style.width = `${100 * ellapsedTime / estimatedTotalTime}%`;
     if (nextTasks.length > 0) {
       run(nextTasks);
     } else {
-      console.log(`All tasks done in a total of: ${totalTasksTime}ms`);
-      totalTasksTime = 0;
+      ellapsedTime = 0;
       pauseButton.innerText = 'Rerun';
     }
   }, taskTime); // timeout variable unit is seconds
@@ -391,6 +394,9 @@ const showGraph = (straceOutput) => {
   stringSet = new Set();
   pipeSet = new Set();
   aggregatedData = {};
+  // Could calculate this when pushing to tasks instead of doing a reduce
+  // afterwards.
+  estimatedTotalTime = tasks.reduce((total, [, time]) => total + time, 0);
 
   run(tasks);
 };
