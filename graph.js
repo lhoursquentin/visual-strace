@@ -312,11 +312,7 @@ const showGraph = (straceOutput) => {
       }
     }
 
-    const returnValue = regexSlice(line, /.* = (-?\d+)/)[1];
-    if (returnValue === '') {
-      console.warn(`Failed to parse syscall return value, ignoring: "${line}"`);
-      return;
-    }
+    const returnValue = Number.parseInt(regexSlice(line, /.* = (-?\d+)/)[1], 10);
     if (!unfinished && returnValue >= 0 && supportedSyscalls.has(syscall)) {
       syscallInfo.returnValue = returnValue;
       additionalTimeDiff = (() => {
