@@ -15,6 +15,41 @@ code > input {
   font-family: inherit;
 }
 
+summary {
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.color::before {
+  content: '';
+  display: inline-block;
+  margin-right: 0.3em;
+  width: 0.8em;
+  height: 0.8em;
+  outline: 0.1em solid black;
+}
+.color.grey::before {
+  background-color: #CCC;
+}
+.color.orange::before {
+  background-color: coral;
+}
+.color.green::before {
+  background-color: mediumaquamarine;
+}
+.color.red::before {
+  background-color: tomato;
+}
+.color.purple::before {
+  background-color: darkslateblue;
+}
+
+.flex-row {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+}
+
 #top {
   position: absolute;
   width: 100%;
@@ -24,12 +59,6 @@ code > input {
   background-color: orange;
   height: 1vh;
   width: 0;
-}
-
-.flex-row {
-  align-items: flex-start;
-  display: flex;
-  justify-content: space-between;
 }
 
 #loader {
@@ -46,6 +75,10 @@ code > input {
   justify-content: space-between;
 }
 
+#loader:not(:hover) {
+  opacity: 0.8;
+}
+
 #loader-content {
   margin-top: 10px;
 }
@@ -57,10 +90,6 @@ code > input {
 #loader-content ul {
   list-style-position: inside;
   padding: 0;
-}
-
-#loader:not(:hover) {
-  opacity: 0.5;
 }
 
 #toggle-loader {
@@ -91,6 +120,10 @@ code > input {
 
 #speed-controller > * {
   margin-right: 5px;
+}
+
+label[for="speed-slider"] {
+  cursor: help;
 }
 
 #speed-value-input {

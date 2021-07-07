@@ -64,28 +64,33 @@
               </summary>
               <ul>
                 <li>
-                  Grey arrows represent father/children process relationships
-                  via <code>fork</code> (or similar) syscalls
+                  <span class="color grey">Grey</span> arrows represent
+                  father/children process relationships via <code>fork</code>
+                  (or similar) syscalls
                 </li>
                 <li>
-                  Orange arrows represent read and write syscalls, the origin
-                  process is the writer and the destination process is the reader
+                  <span class="color orange">Orange</span> arrows represent
+                  read and write syscalls, the origin process is the writer and
+                  the destination process is the reader (pipe relationships).
                 </li>
                 <li>
-                  Green dots are processes that ended with a zero exit code
+                  <span class="color green">Green</span> dots are
+                  processes that ended with a zero exit code
                 </li>
                 <li>
-                  Red dots are processes that ended with a non-zero exit code,
-                  which is specified between parentheses
+                  <span class="color red">Red</span> dots are processes
+                  that ended with a non-zero exit code, which is specified
+                  between parentheses
                 </li>
                 <li>
-                  Purple dots are processes that ended due to a signal,
-                  which is specified between parentheses
+                  <span class="color purple">Purple</span> dots are
+                  processes that ended due to a signal, which is specified
+                  between parentheses
                 </li>
                 <li>
                   Labels are either set with the process ID returned by a
-                  <code>fork</code> (or similar) syscall or with the basename of
-                  binary of a successful <code>execve</code>
+                  <code>fork</code> syscall (or similar) or with the basename
+                  of binary of a successful <code>execve</code>
                 </li>
               </ul>
             </details>
