@@ -62,7 +62,7 @@ summary {
 }
 
 #loader {
-  background-color: rgba(150, 150, 150, 0.5);
+  background-color: lightgrey;
   border-radius: 10px;
   padding: 10px;
   transition: opacity 0.2s;
@@ -76,7 +76,7 @@ summary {
 }
 
 #loader:not(:hover) {
-  opacity: 0.8;
+  opacity: 0.75;
 }
 
 #loader-content {
