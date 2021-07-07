@@ -1,19 +1,9 @@
 body {
+  font-family: Calibri, sans-serif;
+  height: 100vh;
   margin: 0;
   padding: 0;
-  height: 100vh;
   width: 100vw;
-  font-family: Calibri, sans-serif;
-}
-
-#loader header {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-}
-
-#toggle-loader {
-  margin-left: 10px;
 }
 
 code {
@@ -25,19 +15,35 @@ code > input {
   font-family: inherit;
 }
 
-#cy {
-  z-index: 0;
-  height: 100%;
+#top {
+  position: absolute;
   width: 100%;
 }
 
+#progress-line {
+  background-color: orange;
+  height: 1vh;
+  width: 0;
+}
+
+.flex-row {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+}
+
 #loader {
-  z-index: 1;
-  position: absolute;
-  padding: 10px;
   background-color: rgba(150, 150, 150, 0.5);
   border-radius: 10px;
+  padding: 10px;
   transition: opacity 0.2s;
+  z-index: 1;
+}
+
+#loader header {
+  align-items: baseline;
+  display: flex;
+  justify-content: space-between;
 }
 
 #loader-content {
@@ -49,12 +55,16 @@ code > input {
 }
 
 #loader-content ul {
-  padding: 0;
   list-style-position: inside;
+  padding: 0;
 }
 
 #loader:not(:hover) {
   opacity: 0.5;
+}
+
+#toggle-loader {
+  margin-left: 10px;
 }
 
 #strace-output {
@@ -62,8 +72,8 @@ code > input {
 }
 
 #run-form {
-  display: flex;
   align-items: center;
+  display: flex;
   margin-bottom: 5px;
 }
 
@@ -72,13 +82,11 @@ code > input {
 }
 
 #speed-controller {
-  z-index: 1;
-  position: absolute;
-  right: 0;
   align-items: center;
   display: flex;
   padding: 20px;
   visibility: hidden;
+  z-index: 1;
 }
 
 #speed-controller > * {
@@ -89,14 +97,14 @@ code > input {
   width: 10ch;
 }
 
+#cy {
+  height: 100%;
+  width: 100%;
+  z-index: 0;
+}
+
 #cytoscape-link {
   position: absolute;
   bottom: 10px;
   left: 10px;
-}
-
-#progress-line {
-  height: 1%;
-  width: 0;
-  background-color: orange;
 }
