@@ -32,6 +32,7 @@ const charBaseToDecimal = (str) => [...str].reverse().reduce(
 const syscallToIdTuples = [
   ['execve', 0],
   ['clone', 1],
+  ['clone3', 1],
   ['fork', 1],
   ['vfork', 1],
   ['exit', 2],

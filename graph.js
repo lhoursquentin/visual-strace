@@ -6,7 +6,7 @@ let estimatedTotalTime = 0;
 
 const exportUrlElement = document.getElementById('export-url');
 const progressLineElement = document.getElementById('progress-line');
-const forkSyscalls = new Set(['clone', 'fork', 'vfork']);
+const forkSyscalls = new Set(['clone', 'clone3', 'fork', 'vfork']);
 const ioSyscalls = new Set(['read', 'write']);
 const supportedSyscalls = new Set([
   'execve',
