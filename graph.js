@@ -106,12 +106,12 @@ const showGraph = (straceOutput) => {
   };
 
   const forkHandler = (pid, { returnValue }) => {
-    const father = cy.getElementById(pid);
+    const parent = cy.getElementById(pid);
     cy.add([
       {
         group: 'nodes',
         data: { id: returnValue },
-        renderedPosition: { ...father.renderedPosition },
+        renderedPosition: { ...parent.renderedPosition },
       },
       {
         group: 'edges',
