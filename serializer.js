@@ -152,11 +152,7 @@ const exportToUrlV0 = () => {
   ].join('');
 };
 
-const importFromUrlV0 = () => {
-  let query = new URLSearchParams(window.location.search).get('q');
-  if (!query) {
-    return '';
-  }
+const importFromUrlV0 = (query) => {
   const processQuery = (size, handler) => {
     const rawValue = query.slice(0, size);
     const value = handler ? handler(rawValue) : rawValue;

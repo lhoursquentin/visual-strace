@@ -72,7 +72,7 @@ sh -c '
 
 - poor performance & display on mobile devices
 - poor performance when dealing with more than a hundred of processes
-- generated URLs might go over 8000 chars for big traces which will be rejected by most browsers
+- generated URLs might go over 8000 chars for big traces which will be rejected by some servers (current workaround for this issue is to paste the URL in the strace text area, or spin the project locally)
 - socket reading/writing is not supported (yet)
 - only time ratios are kept in the generated URLs, real time taken for each call is lost
 - expect bugs, feel free to open issues, contributions are accepted but beware current code is a mess

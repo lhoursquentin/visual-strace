@@ -24,8 +24,19 @@ const straceOutputChange = ({ target: { value } }) => {
   // If we change the strace output, reset the speed default values on the next
   // run
   speedSetupNeeded = true;
-  generateExportUrl = true;
-  runButton.disabled = value.trim() === '';
+
+  // check if we have a shared URL in the input instead of a strace output,
+  // this is useful to overcome the 8000 char max URL length limitation of some
+  // servers
+  const query = value.match(/^https?:[^ ]+q=(?<query>.+)/)?.groups.query;
+  if (query) {
+    generateExportUrl = false;
+    const straceOutputFromUrl = importFromUrlV0(query);
+    loadStraceOutputArea(straceOutputFromUrl);
+  } else {
+    generateExportUrl = true;
+    runButton.disabled = value.trim() === '';
+  }
 };
 
 const minimizeLoader = () => {
@@ -59,7 +70,6 @@ const readFileContents = ({ target: { files: [file] } }) => {
 
 runButton.addEventListener('click', loadStrace);
 straceOutputElement.addEventListener('input', straceOutputChange);
-straceOutputElement.addEventListener('input', straceOutputChange);
 toggleLoaderButton.addEventListener('click', toggleLoader);
 straceFileInput.addEventListener('change', readFileContents);
 
@@ -67,9 +77,10 @@ straceFileInput.addEventListener('change', readFileContents);
 straceCmdInput.style.width = `${straceCmdInput.value.length}ch`;
 
 document.addEventListener('DOMContentLoaded', () => {
-  const straceOutputFromUrl = importFromUrlV0();
-  if (straceOutputFromUrl) {
+  const query = new URLSearchParams(window.location.search).get('q');
+  if (query) {
     generateExportUrl = false;
+    const straceOutputFromUrl = importFromUrlV0(query);
     loadStraceOutputArea(straceOutputFromUrl);
   }
 });

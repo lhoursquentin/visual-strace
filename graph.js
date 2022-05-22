@@ -383,7 +383,13 @@ const showGraph = (straceOutput) => {
 
   if (generateExportUrl) {
     exportUrlElement.style.display = 'block';
-    exportUrlElement.href = `${window.location.pathname}?q=${exportToUrlV0()}`;
+    const fullUrl = `${window.location.pathname}?q=${exportToUrlV0()}`;
+    if (fullUrl.length >= 8000) {
+      exportUrlElement.title =  `This URL is very long (${fullUrl.length} chars), you can paste it directly in the strace file input text area if the server cannot handle it`;
+    } else {
+      exportUrlElement.removeAttribute('title');
+    }
+    exportUrlElement.href = fullUrl;
   }
   // FIXME resetting global variables here is not a good idea
   contentList = [];
