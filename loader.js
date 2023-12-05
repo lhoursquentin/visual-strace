@@ -77,6 +77,13 @@ straceFileInput.addEventListener('change', readFileContents);
 straceCmdInput.style.width = `${straceCmdInput.value.length}ch`;
 
 document.addEventListener('DOMContentLoaded', () => {
+  const embedMode = new URLSearchParams(window.location.search).get('embed');
+  if (embedMode === 'true') {
+    document.getElementById('loader').style.visibility = 'hidden';
+    document.querySelectorAll('#speed-controller > *:not(#pause-button)').forEach(elt => { elt.style.visibility = 'hidden'; });
+    document.getElementById('cytoscape-link').style.visibility = 'hidden';
+  }
+
   const query = new URLSearchParams(window.location.search).get('q');
   if (query) {
     generateExportUrl = false;
